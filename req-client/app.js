@@ -1,9 +1,25 @@
+let currentTopicId = null;
+
+// Список ролей и их настроек
+const ROLES = {
+    user: { title: 'Пользователь', class: 'role-user' },
+    admin: { title: 'Администратор', class: 'role-admin' },
+    tester: { title: 'Тестер', class: 'role-tester' },
+    dev: { title: 'Разработчик', class: 'role-dev' },
+    support: { title: 'Агент поддержки', class: 'role-support' }
+};
+
+// Функция отрисовки красивого бейджа роли
+function getRoleBadgeHtml(roleKey) {
+    const role = ROLES[roleKey] || ROLES.user;
+    return `<span class="role-badge ${role.class}">${role.title}</span>`;
+}
+
 // Default State
 const defaultState = {
     currentUser: { 
         login: '-812', 
-        gameNick: 'Rom_Roysfield', 
-        city: 'Приазовье',
+        role: 'dev',
         rep: 12, 
         posts: 6, 
         regDate: '2 августа',
@@ -14,13 +30,40 @@ const defaultState = {
         { id: 101, email: 'user@example.com', status: 'Оплачено (150 ₽)' }
     ],
     users: [
-        { login: '-812', role: 'user', rep: 12 },
-        { login: 'Admin', role: 'admin', rep: 99 }
+        { login: '-812', role: 'dev', rep: 12 },
+        { login: 'Admin', role: 'admin', rep: 99 },
+        { login: 'Tester_John', role: 'tester', rep: 5 },
+        { login: 'Support_Alex', role: 'support', rep: 14 }
     ],
     topics: [
-        { id: 1, title: '[Семья Roysfield] Заявление на трудоустройство в ЧОП "КитКат"', author: '-812', replies: 52, likes: 4 },
-        { id: 2, title: 'Forum Games | Никнеймы', author: '-812', replies: 33, likes: 2 },
-        { id: 3, title: 'Оптимизация FPS в CS2 на слабых ПК', author: 'Admin', replies: 12, likes: 18 }
+        { 
+            id: 1, 
+            title: '[Семья Roysfield] Заявление на трудоустройство в ЧОП "КитКат"', 
+            author: '-812', 
+            likes: 4,
+            posts: [
+                { author: '-812', text: 'Заместителю директора ЧОП "КитКат" Ройсфилду Нео Марселовичу от гражданина Республики Провинция. Прошу трудоустроить меня на должность сотрудника охраны.', date: '16 августа' },
+                { author: 'Admin', text: 'Заявление рассмотрено. Одобрено!', date: '16 августа' }
+            ]
+        },
+        { 
+            id: 2, 
+            title: 'Forum Games | Никнеймы', 
+            author: '-812', 
+            likes: 2,
+            posts: [
+                { author: '-812', text: 'Пишем свой игровой никнейм ниже!', date: '16 августа' }
+            ] 
+        },
+        { 
+            id: 3, 
+            title: 'Оптимизация FPS в CS2 на слабых ПК', 
+            author: 'Admin', 
+            likes: 18,
+            posts: [
+                { author: 'Admin', text: 'Инструкция по настройке параметром запуска и системного конфига.', date: '10 августа' }
+            ] 
+        }
     ]
 };
 
@@ -48,6 +91,67 @@ function switchTab(tabName) {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openPaymentModal() { openModal('payModal'); }
+
+// Topic Reader Engine
+function openTopic(id) {
+    currentTopicId = id;
+    switchTab('topic-view');
+    renderTopicView();
+}
+
+function renderTopicView() {
+    const state = getState();
+    const topic = state.topics.find(t => t.id === currentTopicId);
+    if (!topic) return;
+
+    document.getElementById('viewTopicTitle').textContent = topic.title;
+    document.getElementById('viewTopicMeta').innerHTML = `Автор: <strong>${escapeHtml(topic.author)}</strong> | Сообщений: ${topic.posts.length}`;
+
+    const container = document.getElementById('topicRepliesContainer');
+    container.innerHTML = topic.posts.map(p => {
+        const authorObj = state.users.find(u => u.login === p.author) || { role: 'user' };
+        return `
+            <div class="post-card">
+                <div class="post-author-box">
+                    <img src="https://i.imgur.com/8Km9tLL.png" class="post-author-avatar">
+                    <div class="post-author-name">${escapeHtml(p.author)}</div>
+                    <div>${getRoleBadgeHtml(authorObj.role)}</div>
+                </div>
+                <div class="post-content-box">
+                    <div class="post-text">${escapeHtml(p.text)}</div>
+                    <div class="post-footer">
+                        <span>Опубликовано: ${p.date || 'Недавно'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function submitReply() {
+    const text = document.getElementById('newReplyText').value;
+    if (!text) return alert('Введите текст ответа!');
+
+    const state = getState();
+    const topic = state.topics.find(t => t.id === currentTopicId);
+    const authorName = state.currentUser ? state.currentUser.login : 'Гость';
+
+    if (topic) {
+        topic.posts.push({
+            author: authorName,
+            text: text,
+            date: 'Только что'
+        });
+
+        if (state.currentUser) {
+            state.currentUser.posts = (state.currentUser.posts || 0) + 1;
+        }
+
+        saveState(state);
+        document.getElementById('newReplyText').value = '';
+        renderTopicView();
+    }
+}
 
 // Profile Customization
 function changeAvatar() {
@@ -91,6 +195,7 @@ function processPayment() {
 
 function createTopic() {
     const title = document.getElementById('topicTitle').value;
+    const body = document.getElementById('topicBody').value || title;
     const state = getState();
     
     if(!title) return alert('Заполните заголовок!');
@@ -101,8 +206,10 @@ function createTopic() {
         id: Date.now(),
         title: title,
         author: authorName,
-        replies: 0,
-        likes: 0
+        likes: 0,
+        posts: [
+            { author: authorName, text: body, date: 'Только что' }
+        ]
     });
 
     if (state.currentUser) {
@@ -115,7 +222,8 @@ function createTopic() {
     document.getElementById('topicBody').value = '';
 }
 
-function likeTopic(topicId) {
+function likeTopic(topicId, event) {
+    event.stopPropagation();
     const state = getState();
     const topic = state.topics.find(t => t.id === topicId);
     
@@ -131,9 +239,7 @@ function likeTopic(topicId) {
 }
 
 // Auth Logic
-let authType = 'login';
 function openAuth(type) {
-    authType = type;
     document.getElementById('authModalTitle').textContent = type === 'login' ? 'Авторизация' : 'Регистрация';
     document.getElementById('authSubmitBtn').textContent = type === 'login' ? 'Войти' : 'Зарегистрироваться';
     openModal('authModal');
@@ -141,7 +247,6 @@ function openAuth(type) {
 
 function handleAuth() {
     const login = document.getElementById('authLogin').value;
-    const gameNick = document.getElementById('authGameNick').value || login;
     if(!login) return alert('Введите логин!');
 
     const state = getState();
@@ -153,8 +258,7 @@ function handleAuth() {
 
     state.currentUser = {
         login: userObj.login,
-        gameNick: gameNick,
-        city: 'Не указан',
+        role: userObj.role || 'user',
         rep: userObj.rep || 0,
         posts: 0,
         regDate: 'Сегодня',
@@ -177,11 +281,15 @@ function deleteOrder(id) {
     saveState(state);
 }
 
-function toggleRole(login) {
+// Смена роли пользователя из Админки
+function changeUserRole(login, newRole) {
     const state = getState();
     const u = state.users.find(x => x.login === login);
     if(u) {
-        u.role = u.role === 'admin' ? 'user' : 'admin';
+        u.role = newRole;
+        if (state.currentUser && state.currentUser.login === login) {
+            state.currentUser.role = newRole;
+        }
         saveState(state);
     }
 }
@@ -189,7 +297,7 @@ function toggleRole(login) {
 // Render Engine
 function render() {
     const state = getState();
-    const user = state.currentUser || { login: 'Гость', rep: 0, posts: 0, gameNick: 'Не указан', regDate: '-' };
+    const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-' };
 
     // 1. Auth Header
     const authNav = document.getElementById('navAuth');
@@ -212,10 +320,10 @@ function render() {
     // 2. Profile View
     if (document.getElementById('profUsername')) {
         document.getElementById('profUsername').textContent = user.login;
+        document.getElementById('profGroup').innerHTML = getRoleBadgeHtml(user.role);
         document.getElementById('profPosts').textContent = user.posts || 0;
         document.getElementById('profReg').textContent = user.regDate || '2 августа';
         document.getElementById('profRepScore').textContent = user.rep || 0;
-        document.getElementById('profGameNick').textContent = user.gameNick || 'Rom_Roysfield';
         
         if (user.avatar) document.getElementById('profAvatar').src = user.avatar;
         if (user.cover) document.getElementById('profCover').style.background = user.cover;
@@ -227,20 +335,22 @@ function render() {
         document.getElementById('profRepStatus').textContent = status;
     }
 
-    // 3. Forum Topics
+    // 3. Forum Topics View
     const forumContainer = document.getElementById('topicsContainer');
     if (forumContainer) {
         forumContainer.innerHTML = state.topics.map(t => `
             <div class="topic-item">
-                <div class="topic-info">
-                    <h4>${escapeHtml(t.title)}</h4>
-                    <p>Автор: <strong>${escapeHtml(t.author)}</strong> | Лайков: <span style="color:var(--accent); font-weight:700;">+${t.likes || 0}</span></p>
+                <div class="topic-clickable" onclick="openTopic(${t.id})">
+                    <div class="topic-info">
+                        <h4>${escapeHtml(t.title)}</h4>
+                        <p>Автор: <strong>${escapeHtml(t.author)}</strong> | Лайков: <span style="color:var(--accent); font-weight:700;">+${t.likes || 0}</span></p>
+                    </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <button class="btn btn-outline btn-sm" onclick="likeTopic(${t.id})">
+                    <button class="btn btn-outline btn-sm" onclick="likeTopic(${t.id}, event)">
                         <i class="fas fa-heart" style="color:#e67e22;"></i> +1
                     </button>
-                    <span style="color:var(--yellow); font-size:13px; font-weight:700;">${t.replies} ответов</span>
+                    <span style="color:var(--yellow); font-size:13px; font-weight:700;">${t.posts ? t.posts.length : 0} ответов</span>
                 </div>
             </div>
         `).join('');
@@ -254,7 +364,7 @@ function render() {
             activityFeed.innerHTML = '<p class="empty-text">Сообщение не может быть отображено т.к. находится в защищенном разделе или нет активности.</p>';
         } else {
             activityFeed.innerHTML = userTopics.map(t => `
-                <div class="act-item">
+                <div class="act-item" onclick="openTopic(${t.id})" style="cursor:pointer;">
                     <i class="fas fa-comment act-icon"></i>
                     <div class="act-body">
                         <h5>${escapeHtml(t.title)}</h5>
@@ -283,8 +393,12 @@ function render() {
         usersTbody.innerHTML = state.users.map(u => `
             <tr>
                 <td>${escapeHtml(u.login)}</td>
-                <td><strong>${u.role}</strong></td>
-                <td><button class="btn btn-outline btn-sm" onclick="toggleRole('${u.login}')">Сменить роль</button></td>
+                <td>${getRoleBadgeHtml(u.role)}</td>
+                <td>
+                    <select class="admin-select" onchange="changeUserRole('${u.login}', this.value)">
+                        ${Object.keys(ROLES).map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLES[r].title}</option>`).join('')}
+                    </select>
+                </td>
             </tr>
         `).join('');
     }
