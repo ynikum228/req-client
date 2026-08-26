@@ -1,428 +1,607 @@
 import React, { useState } from 'react';
 import { 
-  Shield, ThumbsUp, Terminal, Users, AlertTriangle, 
-  MessageSquare, Star, Lock, CornerDownRight, Plus
+  Shield, User, MessageSquare, ThumbsUp, Lock, Plus, 
+  Terminal, Users, AlertTriangle, Key, Copy, Check, 
+  Search, Pin, ChevronRight, Crown, Sparkles, CheckCircle2
 } from 'lucide-react';
 
-// Доступные роли
+// === РОЛИ И СТИЛИ ===
 const ROLES = {
-  user: { name: 'Пользователь', color: 'text-gray-400', bg: 'bg-gray-800' },
-  tester: { name: 'Тестер', color: 'text-cyan-400', bg: 'bg-cyan-950/50 border-cyan-800' },
-  support: { name: 'Агент поддержки', color: 'text-blue-400', bg: 'bg-blue-950/50 border-blue-800' },
-  developer: { name: 'Разработчик', color: 'text-purple-400', bg: 'bg-purple-950/50 border-purple-800' },
-  admin: { name: 'Администратор', color: 'text-red-400', bg: 'bg-red-950/50 border-red-800' }
+  owner: { name: 'Owner', color: 'text-amber-400', bg: 'bg-amber-950/70 border-amber-600' },
+  admin: { name: 'Администратор', color: 'text-red-400', bg: 'bg-red-950/60 border-red-700/50' },
+  developer: { name: 'Разработчик', color: 'text-purple-400', bg: 'bg-purple-950/60 border-purple-700/50' },
+  support: { name: 'Агент поддержки', color: 'text-blue-400', bg: 'bg-blue-950/60 border-blue-700/50' },
+  tester: { name: 'Тестер', color: 'text-cyan-400', bg: 'bg-cyan-950/60 border-cyan-700/50' },
+  user: { name: 'Пользователь', color: 'text-gray-400', bg: 'bg-gray-800/60 border-gray-700' }
 };
 
+// Единственный аккаунт Morphezy с UID #1
 const INITIAL_USERS = {
-  '-812': { id: 1, username: '-812', role: 'admin', reputation: 0, warningPoints: 0, likedReviews: {} },
-  'Pablo_Moore': { id: 2, username: 'Pablo_Moore', role: 'support', reputation: 12, warningPoints: 0, likedReviews: {} },
-  'twelvest': { id: 3, username: 'twelvest', role: 'tester', reputation: 5, warningPoints: 0, likedReviews: {} }
+  'morphezy': { 
+    uid: 1,
+    username: 'morphezy', 
+    role: 'owner', 
+    avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
+    reputation: 999, 
+    postsCount: 1, 
+    joined: '26.08.2026', 
+    subscription: 'Owner Access (Unlimited)',
+    warningPoints: 0,
+    likedPosts: {} 
+  }
 };
+
+const INITIAL_TOPICS = [
+  {
+    id: 1,
+    title: 'Добро пожаловать в обновленный HUB req-client',
+    category: 'Обновления',
+    isPinned: true,
+    author: 'morphezy',
+    date: 'Сегодня',
+    views: 1,
+    posts: [
+      { 
+        id: 101, 
+        author: 'morphezy', 
+        date: 'Сегодня', 
+        content: 'Система полностью обновлена. Все прошлые профили сброшены. Внедрена система UID.', 
+        likes: 1 
+      }
+    ]
+  }
+];
 
 export default function ReqClientApp() {
-  const [currentUserKey, setCurrentUserKey] = useState('-812');
-  const [activeView, setActiveView] = useState('reviews_list'); // 'reviews_list' | 'review_detail' | 'admin'
-  const [selectedReviewId, setSelectedReviewId] = useState(null);
+  const [currentUserKey] = useState('morphezy'); // Единственный пользователь
+  const [activeTab, setActiveTab] = useState('forum'); // 'forum' | 'topic' | 'profile' | 'keygen' | 'admin'
+  const [selectedTopicId, setSelectedTopicId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Состояние данных
   const [users, setUsers] = useState(INITIAL_USERS);
-  const [reports, setReports] = useState([]);
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      title: 'Отличный клиент req-client, рекомендую!',
-      author: 'Pablo_Moore',
-      rating: 5,
-      date: 'Вчера, 18:20',
-      content: 'Пользуюсь продуктом уже около месяца. Все функции работают стабильно, оптимизация на высоте.',
-      likes: 4,
-      comments: [
-        { id: 101, author: 'twelvest', date: 'Вчера, 19:00', content: 'Согласен, оптимизация действительно порадовала.' }
-      ]
-    }
-  ]);
-
+  const [topics, setTopics] = useState(INITIAL_TOPICS);
+  const [generatedKeys, setGeneratedKeys] = useState([]);
+  
   // Формы
-  const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
-  const [newRating, setNewRating] = useState(5);
-  const [commentText, setCommentText] = useState('');
+  const [newTopicTitle, setNewTopicTitle] = useState('');
+  const [newTopicCategory, setNewTopicCategory] = useState('Обсуждение');
+  const [newTopicContent, setNewTopicContent] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  // Настройки генератора ключей
+  const [keyDuration, setKeyDuration] = useState('lifetime');
+  const [keyAmount, setKeyAmount] = useState(1);
+  const [keyNote, setKeyNote] = useState('');
 
   const currentUser = users[currentUserKey];
-  const hasAdminAccess = ['support', 'admin'].includes(currentUser.role);
 
-  // Проверка ограничений за баллы
-  const isBanned = currentUser.warningPoints >= 80 || currentUser.warningPoints >= 10;
+  // Полные права для Owner
+  const hasFullAccess = ['owner', 'admin', 'developer'].includes(currentUser.role);
 
-  // Создание отзыва
-  const handleCreateReview = (e) => {
+  // --- ЛОГИКА ФОРУМА ---
+  const handleCreateTopic = (e) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim() || isBanned) return;
+    if (!newTopicTitle.trim() || !newTopicContent.trim()) return;
 
-    const reviewId = Date.now();
-    const newReview = {
-      id: reviewId,
-      title: newTitle,
+    const topicId = Date.now();
+    const topic = {
+      id: topicId,
+      title: newTopicTitle,
+      category: newTopicCategory,
+      isPinned: false,
       author: currentUser.username,
-      rating: Number(newRating),
       date: 'Только что',
-      content: newContent,
-      likes: 0,
-      comments: []
+      views: 1,
+      posts: [
+        { id: Date.now() + 1, author: currentUser.username, date: 'Только что', content: newTopicContent, likes: 0 }
+      ]
     };
 
-    setReviews([newReview, ...reviews]);
-    setNewTitle('');
-    setNewContent('');
-    setNewRating(5);
-    setSelectedReviewId(reviewId);
-    setActiveView('review_detail');
+    setTopics([topic, ...topics]);
+    setUsers({
+      ...users,
+      [currentUser.username]: { ...currentUser, postsCount: currentUser.postsCount + 1 }
+    });
+    setNewTopicTitle('');
+    setNewTopicContent('');
+    setSelectedTopicId(topicId);
+    setActiveTab('topic');
   };
 
-  // Добавление комментария к отзыву
-  const handleAddComment = (e) => {
+  const handleAddReply = (e) => {
     e.preventDefault();
-    if (!commentText.trim() || isBanned) return;
+    if (!replyText.trim()) return;
 
-    setReviews(reviews.map(r => {
-      if (r.id === selectedReviewId) {
+    setTopics(topics.map(t => {
+      if (t.id === selectedTopicId) {
         return {
-          ...r,
-          comments: [
-            ...r.comments,
-            { id: Date.now(), author: currentUser.username, date: 'Только что', content: commentText }
-          ]
+          ...t,
+          posts: [...t.posts, { id: Date.now(), author: currentUser.username, date: 'Только что', content: replyText, likes: 0 }]
         };
       }
-      return r;
+      return t;
     }));
-    setCommentText('');
+
+    setUsers({
+      ...users,
+      [currentUser.username]: { ...currentUser, postsCount: currentUser.postsCount + 1 }
+    });
+    setReplyText('');
   };
 
-  // Защита от накрутки лайков (1 лайк от 1 пользователя)
-  const handleLike = (reviewId, authorUsername) => {
-    if (currentUser.username === authorUsername) return;
-    const userLikes = currentUser.likedReviews || {};
+  const handleLikePost = (postId, authorUsername) => {
+    const userLikes = currentUser.likedPosts || {};
+    const hasLiked = userLikes[postId];
 
-    if (userLikes[reviewId]) {
-      // Снять лайк
-      setReviews(reviews.map(r => r.id === reviewId ? { ...r, likes: r.likes - 1 } : r));
-      setUsers({
-        ...users,
-        [currentUser.username]: { ...currentUser, likedReviews: { ...userLikes, [reviewId]: false } }
-      });
-    } else {
-      // Поставить лайк
-      setReviews(reviews.map(r => r.id === reviewId ? { ...r, likes: r.likes + 1 } : r));
-      setUsers({
-        ...users,
-        [currentUser.username]: { ...currentUser, likedReviews: { ...userLikes, [reviewId]: true } }
+    setTopics(topics.map(t => ({
+      ...t,
+      posts: t.posts.map(p => {
+        if (p.id === postId) {
+          return { ...p, likes: hasLiked ? p.likes - 1 : p.likes + 1 };
+        }
+        return p;
+      })
+    })));
+
+    setUsers({
+      ...users,
+      [currentUser.username]: { ...currentUser, likedPosts: { ...userLikes, [postId]: !hasLiked } }
+    });
+  };
+
+  // --- ГЕНЕРАТОР КЛЮЧЕЙ ---
+  const generateLicenseKey = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const segment = () => Array.from({ length: 4 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    return `REQ-${segment()}-${segment()}-${segment()}`;
+  };
+
+  const handleGenerateKeys = (e) => {
+    e.preventDefault();
+    const newKeys = [];
+    for (let i = 0; i < Number(keyAmount); i++) {
+      newKeys.push({
+        id: Date.now() + i,
+        key: generateLicenseKey(),
+        duration: keyDuration === '1_day' ? '1 День' : keyDuration === '30_days' ? '30 Дней' : 'Lifetime',
+        createdBy: currentUser.username,
+        createdAt: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        note: keyNote || 'Без заметки'
       });
     }
+    setGeneratedKeys([...newKeys, ...generatedKeys]);
+    setKeyNote('');
   };
 
-  // Пожаловаться
-  const handleReport = (reviewId, author) => {
-    const reason = prompt('Укажите причину жалобы на отзыв:');
-    if (!reason) return;
-
-    setReports([...reports, { id: Date.now(), reviewId, author, reportedBy: currentUser.username, reason }]);
-    alert('Жалоба отправлена модераторам.');
+  const copyToClipboard = (text, keyId) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(keyId);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // Наказания
-  const addWarningPoints = (username, points) => {
-    setUsers(prev => ({
-      ...prev,
-      [username]: { ...prev[username], warningPoints: prev[username].warningPoints + points }
-    }));
-  };
+  const filteredTopics = topics.filter(t => {
+    const matchesCat = selectedCategory === 'Все' || t.category === selectedCategory;
+    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
-  const selectedReview = reviews.find(r => r.id === selectedReviewId);
+  const currentTopic = topics.find(t => t.id === selectedTopicId);
 
   return (
-    <div className="min-h-screen bg-[#16171d] text-[#b0b3b8] font-sans">
+    <div className="min-h-screen bg-[#0d0e12] text-gray-300 font-sans selection:bg-amber-500/30 selection:text-amber-200">
       
-      {/* HEADER */}
-      <header className="bg-[#1c1d24] border-b border-[#2a2b36] sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div 
-            onClick={() => setActiveView('reviews_list')} 
-            className="flex items-center gap-2 cursor-pointer font-bold text-white tracking-wider text-lg"
-          >
-            <Terminal className="text-orange-500" size={20} />
-            REQ-CLIENT <span className="text-xs bg-orange-600/20 text-orange-400 px-2 py-0.5 rounded font-normal">Отзывы</span>
-          </div>
+      {/* ─── НАВИГАЦИЯ / HEADER ─── */}
+      <header className="bg-[#13141c]/80 backdrop-blur-md border-b border-gray-800/80 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          
+          <div className="flex items-center gap-8">
+            <div onClick={() => setActiveTab('forum')} className="flex items-center gap-2.5 cursor-pointer group">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition">
+                <Terminal className="text-black stroke-[2.5]" size={20} />
+              </div>
+              <div>
+                <span className="font-extrabold text-lg text-white tracking-wider block leading-none">REQ<span className="text-amber-500">.CLIENT</span></span>
+                <span className="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Community & Hub</span>
+              </div>
+            </div>
 
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => setActiveView('reviews_list')} 
-              className={`text-xs px-3 py-1.5 rounded transition ${activeView !== 'admin' ? 'bg-[#282936] text-white' : 'hover:text-white'}`}
-            >
-              Все отзывы
-            </button>
-
-            {hasAdminAccess && (
+            {/* Меню навигации */}
+            <nav className="hidden md:flex items-center gap-1 bg-gray-900/60 p-1 rounded-xl border border-gray-800/60 text-xs font-medium">
               <button 
-                onClick={() => setActiveView('admin')} 
-                className={`text-xs px-3 py-1.5 rounded flex items-center gap-1.5 transition ${activeView === 'admin' ? 'bg-orange-600 text-white' : 'text-orange-400 hover:bg-[#282936]'}`}
+                onClick={() => setActiveTab('forum')} 
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'forum' || activeTab === 'topic' ? 'bg-amber-600 text-white shadow-md' : 'hover:text-white hover:bg-gray-800/50'}`}
               >
-                <Shield size={13} /> Админка
+                <MessageSquare size={14} /> Форум
               </button>
-            )}
+              
+              <button 
+                onClick={() => setActiveTab('profile')} 
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'profile' ? 'bg-amber-600 text-white shadow-md' : 'hover:text-white hover:bg-gray-800/50'}`}
+              >
+                <User size={14} /> Профиль
+              </button>
 
-            {/* Быстрая смена пользователя */}
-            <select 
-              value={currentUserKey} 
-              onChange={(e) => setCurrentUserKey(e.target.value)}
-              className="bg-[#16171d] border border-[#2a2b36] text-xs text-white rounded px-2 py-1 outline-none cursor-pointer"
-            >
-              {Object.keys(users).map(key => (
-                <option key={key} value={key}>
-                  {key} ({ROLES[users[key].role]?.name})
-                </option>
-              ))}
-            </select>
+              <button 
+                onClick={() => setActiveTab('keygen')} 
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'keygen' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-400 hover:bg-purple-950/30'}`}
+              >
+                <Key size={14} /> Генератор ключей
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('admin')} 
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'admin' ? 'bg-red-600 text-white shadow-md' : 'text-red-400 hover:bg-red-950/30'}`}
+              >
+                <Shield size={14} /> Управление
+              </button>
+            </nav>
           </div>
+
+          {/* Карточка пользователя в шапке */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 bg-gray-900/80 px-3 py-1.5 rounded-xl border border-gray-800 text-xs">
+              <span className="font-mono text-amber-400 font-bold">UID #{currentUser.uid}</span>
+              <span className="text-white font-semibold">{currentUser.username}</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold border border-amber-600 bg-amber-950/70 text-amber-400 flex items-center gap-1">
+                <Crown size={10} /> OWNER
+              </span>
+            </div>
+          </div>
+
         </div>
       </header>
 
-      {/* CONTENT */}
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      {/* ─── ОСНОВНОЙ КОНТЕНТ ─── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* ПРЕДУПРЕЖДЕНИЕ О БАНЕ */}
-        {isBanned && (
-          <div className="mb-6 bg-red-950/40 border border-red-800 p-4 rounded flex items-center gap-3 text-red-200 text-xs">
-            <AlertTriangle size={18} className="text-red-500 flex-shrink-0" />
-            <div>Ваш аккаунт заблокирован или превысил лимит предупреждений ({currentUser.warningPoints}/80 баллов). Функция публикаций ограничена.</div>
-          </div>
-        )}
-
-        {/* ================= 1. СПИСОК ОТЗЫВОВ ================= */}
-        {activeView === 'reviews_list' && (
-          <div className="space-y-6">
+        {/* ================= 1. ФОРУМ ================= */}
+        {activeTab === 'forum' && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             
-            {/* Форма публикации нового отзыва */}
-            {!isBanned && (
-              <div className="bg-[#1c1d24] border border-[#2a2b36] p-4 rounded space-y-3">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-1.5">
-                  <Plus size={16} className="text-orange-500" /> Оставить отзыв о req-client
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="space-y-6">
+              <div className="bg-[#13141c] p-4 rounded-2xl border border-gray-800/80 space-y-3">
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-3 text-gray-500" />
                   <input 
                     type="text"
-                    placeholder="Заголовок отзыва..."
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="md:col-span-3 bg-[#16171d] border border-[#2a2b36] rounded p-2 text-xs text-white focus:outline-none focus:border-orange-500"
+                    placeholder="Поиск по темам..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[#0d0e12] border border-gray-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
                   />
-                  <select 
-                    value={newRating}
-                    onChange={(e) => setNewRating(e.target.value)}
-                    className="bg-[#16171d] border border-[#2a2b36] text-xs text-yellow-400 rounded p-2 outline-none cursor-pointer"
-                  >
-                    <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
-                    <option value="4">⭐⭐⭐⭐ (4/5)</option>
-                    <option value="3">⭐⭐⭐ (3/5)</option>
-                    <option value="2">⭐⭐ (2/5)</option>
-                    <option value="1">⭐ (1/5)</option>
-                  </select>
                 </div>
 
-                <textarea 
-                  placeholder="Опишите ваши впечатления от использования..."
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  className="w-full bg-[#16171d] border border-[#2a2b36] rounded p-2.5 text-xs text-white focus:outline-none focus:border-orange-500 h-20 resize-none"
-                ></textarea>
-
-                <button 
-                  onClick={handleCreateReview}
-                  className="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded text-xs transition"
-                >
-                  Опубликовать отзыв
-                </button>
-              </div>
-            )}
-
-            {/* Список отзывов */}
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-white border-b border-[#2a2b36] pb-2">Все отзывы ({reviews.length})</h2>
-              
-              {reviews.map((rev) => {
-                const authorInfo = users[rev.author] || {};
-                const role = ROLES[authorInfo.role] || ROLES.user;
-
-                return (
-                  <div 
-                    key={rev.id} 
-                    onClick={() => { setSelectedReviewId(rev.id); setActiveView('review_detail'); }}
-                    className="bg-[#1c1d24] border border-[#2a2b36] hover:border-gray-600 p-4 rounded cursor-pointer transition space-y-2"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-base font-bold text-white hover:text-orange-400 transition">{rev.title}</h3>
-                        <div className="flex items-center gap-2 mt-1 text-xs">
-                          <span className="font-semibold text-gray-200">{rev.author}</span>
-                          <span className={`px-1.5 py-0.2 rounded text-[10px] border ${role.color} ${role.bg}`}>{role.name}</span>
-                          <span className="text-gray-500">• {rev.date}</span>
-                        </div>
-                      </div>
-
-                      {/* Оценка в звёздах */}
-                      <div className="flex text-yellow-400 text-xs">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={14} fill={i < rev.rating ? "currentColor" : "none"} className={i < rev.rating ? "" : "text-gray-600"} />
-                        ))}
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-gray-300 line-clamp-2">{rev.content}</p>
-
-                    <div className="flex items-center gap-4 pt-2 text-[11px] text-gray-500 border-t border-[#2a2b36]">
-                      <span className="flex items-center gap-1"><MessageSquare size={12} /> {rev.comments.length} комментариев</span>
-                      <span className="flex items-center gap-1"><ThumbsUp size={12} /> {rev.likes} лайков</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-          </div>
-        )}
-
-        {/* ================= 2. ОТКРЫТЫЙ ОТЗЫВ (ОТКРЫВАЕТСЯ КОРРЕКТНО) ================= */}
-        {activeView === 'review_detail' && selectedReview && (
-          <div className="space-y-4">
-            <button 
-              onClick={() => setActiveView('reviews_list')}
-              className="text-xs text-orange-400 hover:underline mb-2 inline-block"
-            >
-              ← Назад ко всем отзывам
-            </button>
-
-            {/* Карточка открытого отзыва */}
-            <div className="bg-[#1c1d24] border border-[#2a2b36] p-5 rounded space-y-4">
-              <div className="flex justify-between items-start border-b border-[#2a2b36] pb-3">
-                <div>
-                  <h1 className="text-xl font-bold text-white">{selectedReview.title}</h1>
-                  <div className="flex items-center gap-2 mt-1 text-xs">
-                    <span className="font-semibold text-gray-200">{selectedReview.author}</span>
-                    <span className={`px-1.5 py-0.2 rounded text-[10px] border ${ROLES[users[selectedReview.author]?.role]?.color || ROLES.user.color} ${ROLES[users[selectedReview.author]?.role]?.bg || ROLES.user.bg}`}>
-                      {ROLES[users[selectedReview.author]?.role]?.name || 'Пользователь'}
-                    </span>
-                    <span className="text-gray-500">• {selectedReview.date}</span>
-                  </div>
-                </div>
-
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill={i < selectedReview.rating ? "currentColor" : "none"} className={i < selectedReview.rating ? "" : "text-gray-600"} />
+                <div className="space-y-1 pt-2">
+                  <span className="text-[10px] uppercase font-mono text-gray-500 px-2 tracking-wider">Категории</span>
+                  {['Все', 'Обновления', 'Обсуждение', 'Отзывы', 'Вопросы'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition ${selectedCategory === cat ? 'bg-amber-600/10 text-amber-400 border border-amber-500/20' : 'text-gray-400 hover:bg-gray-800/40 hover:text-white'}`}
+                    >
+                      <span>{cat}</span>
+                      <ChevronRight size={14} className={selectedCategory === cat ? 'opacity-100' : 'opacity-0'} />
+                    </button>
                   ))}
                 </div>
               </div>
 
-              <div className="text-sm text-gray-200 leading-relaxed">
-                {selectedReview.content}
-              </div>
-
-              {/* Панель лайков и жалоб */}
-              <div className="flex justify-between items-center pt-3 border-t border-[#2a2b36] text-xs">
-                <button 
-                  onClick={() => handleReport(selectedReview.id, selectedReview.author)}
-                  className="text-red-400 hover:underline flex items-center gap-1 text-[11px]"
-                >
-                  <AlertTriangle size={12} /> Пожаловаться
-                </button>
-
-                <button 
-                  onClick={() => handleLike(selectedReview.id, selectedReview.author)}
-                  disabled={currentUser.username === selectedReview.author}
-                  className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition ${
-                    (currentUser.likedReviews || {})[selectedReview.id] 
-                      ? 'bg-orange-600 text-white' 
-                      : 'bg-[#24252f] text-gray-300 hover:bg-[#323443]'
-                  } ${currentUser.username === selectedReview.author ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <ThumbsUp size={12} />
-                  <span>{selectedReview.likes}</span>
-                </button>
+              <div className="bg-[#13141c] p-4 rounded-2xl border border-gray-800/80 space-y-3 text-xs">
+                <span className="text-[10px] uppercase font-mono text-gray-500 tracking-wider">Информация HUB</span>
+                <div className="flex justify-between py-1 border-b border-gray-800/60">
+                  <span className="text-gray-400">Владелец:</span>
+                  <span className="font-mono text-amber-400 font-bold">morphezy (UID #1)</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-800/60">
+                  <span className="text-gray-400">Всего аккаунтов:</span>
+                  <span className="font-mono text-white">1</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-400">Доступ:</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Full Root Access
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Блок комментариев */}
-            <div className="bg-[#1c1d24] border border-[#2a2b36] p-4 rounded space-y-4">
-              <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Комментарии ({selectedReview.comments.length})</h3>
-
-              <div className="space-y-2">
-                {selectedReview.comments.map(c => (
-                  <div key={c.id} className="bg-[#16171d] p-3 rounded border border-[#2a2b36] text-xs space-y-1">
-                    <div className="flex justify-between text-gray-400">
-                      <span className="font-bold text-gray-200">{c.author}</span>
-                      <span className="text-[10px]">{c.date}</span>
-                    </div>
-                    <p className="text-gray-300">{c.content}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Форма добавления комментария */}
-              {!isBanned && (
-                <form onSubmit={handleAddComment} className="flex gap-2 pt-2 border-t border-[#2a2b36]">
+            <div className="lg:col-span-3 space-y-6">
+              <div className="bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl space-y-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sparkles size={16} className="text-amber-500" /> Опубликовать новую тему
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <input 
                     type="text"
-                    placeholder="Написать ответ к отзыву..."
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    className="flex-1 bg-[#16171d] border border-[#2a2b36] text-xs text-white rounded p-2 focus:outline-none focus:border-orange-500"
+                    placeholder="Заголовок темы..."
+                    value={newTopicTitle}
+                    onChange={(e) => setNewTopicTitle(e.target.value)}
+                    className="sm:col-span-2 bg-[#0d0e12] border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/50"
                   />
-                  <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white text-xs px-4 py-2 rounded font-semibold transition">
-                    Отправить
+                  <select 
+                    value={newTopicCategory}
+                    onChange={(e) => setNewTopicCategory(e.target.value)}
+                    className="bg-[#0d0e12] border border-gray-800 text-xs text-gray-300 rounded-xl px-3 py-2 outline-none cursor-pointer"
+                  >
+                    <option value="Обсуждение">Обсуждение</option>
+                    <option value="Обновления">Обновления</option>
+                    <option value="Отзывы">Отзывы</option>
+                    <option value="Вопросы">Вопросы</option>
+                  </select>
+                </div>
+
+                <textarea 
+                  placeholder="Содержимое темы..."
+                  value={newTopicContent}
+                  onChange={(e) => setNewTopicContent(e.target.value)}
+                  className="w-full bg-[#0d0e12] border border-gray-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500/50 h-24 resize-none"
+                ></textarea>
+
+                <div className="flex justify-end">
+                  <button 
+                    onClick={handleCreateTopic}
+                    className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold px-5 py-2 rounded-xl text-xs transition shadow-lg shadow-amber-600/20"
+                  >
+                    Создать тему
                   </button>
-                </form>
-              )}
+                </div>
+              </div>
+
+              <div className="bg-[#13141c] border border-gray-800/80 rounded-2xl overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-gray-800/80 text-xs font-semibold text-gray-400">
+                  Все темы форума
+                </div>
+
+                <div className="divide-y divide-gray-800/50">
+                  {filteredTopics.map(topic => (
+                    <div 
+                      key={topic.id} 
+                      onClick={() => { setSelectedTopicId(topic.id); setActiveTab('topic'); }}
+                      className="p-5 flex items-center justify-between hover:bg-gray-800/20 cursor-pointer transition group"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          {topic.isPinned && (
+                            <span className="flex items-center gap-1 text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-md font-medium">
+                              <Pin size={10} /> Закреплено
+                            </span>
+                          )}
+                          <span className="text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded-md font-mono">
+                            {topic.category}
+                          </span>
+                          <h4 className="text-sm font-semibold text-white group-hover:text-amber-400 transition">
+                            {topic.title}
+                          </h4>
+                        </div>
+
+                        <div className="text-xs text-gray-500 flex items-center gap-3">
+                          <span>Автор: <strong className="text-amber-400">morphezy (UID #1)</strong></span>
+                          <span className="px-1.5 py-0.2 rounded text-[10px] border border-amber-600 bg-amber-950/70 text-amber-400 font-bold">Owner</span>
+                          <span>• {topic.date}</span>
+                        </div>
+                      </div>
+
+                      <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
 
-        {/* ================= 3. АДМИН-ПАНЕЛЬ ================= */}
-        {activeView === 'admin' && hasAdminAccess && (
-          <div className="bg-[#1c1d24] border border-[#2a2b36] p-5 rounded space-y-5">
-            <h1 className="text-base font-bold text-white flex items-center gap-2 border-b border-[#2a2b36] pb-3">
-              <Shield className="text-orange-500" size={18} /> Модерация отзывов и пользователей
-            </h1>
+        {/* ================= 2. ПРОСМОТР ТЕМЫ ================= */}
+        {activeTab === 'topic' && currentTopic && (
+          <div className="space-y-6 max-w-5xl mx-auto">
+            <button onClick={() => setActiveTab('forum')} className="text-xs text-amber-400 hover:underline flex items-center gap-1">
+              ← Назад к темам
+            </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Управление баллами и ролями */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-semibold text-white uppercase">Пользователи</h3>
-                {Object.values(users).map(u => (
-                  <div key={u.id} className="p-3 bg-[#16171d] border border-[#2a2b36] rounded text-xs space-y-2">
-                    <div className="flex justify-between">
-                      <span className="font-bold text-white">{u.username}</span>
-                      <span className="text-red-400">{u.warningPoints} баллов</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => addWarningPoints(u.username, 10)} className="px-2 py-1 bg-yellow-950/40 text-yellow-400 border border-yellow-800 rounded text-[10px]">+10 б. (Мут)</button>
-                      <button onClick={() => addWarningPoints(u.username, 80)} className="px-2 py-1 bg-red-950/40 text-red-400 border border-red-800 rounded text-[10px]">+80 б. (Бан)</button>
+            <div className="bg-[#13141c] border border-gray-800/80 p-6 rounded-2xl">
+              <span className="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-md font-medium">
+                {currentTopic.category}
+              </span>
+              <h1 className="text-xl font-bold text-white mt-2">{currentTopic.title}</h1>
+            </div>
+
+            <div className="space-y-4">
+              {currentTopic.posts.map((post, index) => (
+                <div key={post.id} className="bg-[#13141c] border border-gray-800/80 rounded-2xl overflow-hidden flex flex-col md:flex-row">
+                  <div className="w-full md:w-56 bg-[#0f1017] p-5 flex flex-col items-center border-r border-gray-800/60 text-center">
+                    <img src={currentUser.avatar} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-amber-500/40 mb-3" />
+                    <span className="text-sm font-bold text-white flex items-center gap-1">
+                      {currentUser.username} <Crown size={12} className="text-amber-400" />
+                    </span>
+                    <span className="text-[10px] font-mono text-amber-400 font-bold mb-1">UID #{currentUser.uid}</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-amber-600 bg-amber-950/70 text-amber-400">
+                      Owner
+                    </span>
+                  </div>
+
+                  <div className="flex-1 p-6 flex flex-col justify-between space-y-4">
+                    <div className="text-sm text-gray-200 leading-relaxed">{post.content}</div>
+                    <div className="flex justify-end pt-3 border-t border-gray-800/40">
+                      <button 
+                        onClick={() => handleLikePost(post.id, currentUser.username)}
+                        className="px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs bg-amber-600 text-white shadow-lg shadow-amber-600/20"
+                      >
+                        <ThumbsUp size={13} />
+                        <span className="font-mono">{post.likes}</span>
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
 
-              {/* Жалобы */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-semibold text-white uppercase">Поступившие жалобы ({reports.length})</h3>
-                {reports.length === 0 ? (
-                  <div className="text-xs text-gray-500">Жалоб нет</div>
-                ) : (
-                  reports.map(rep => (
-                    <div key={rep.id} className="p-3 bg-[#16171d] border border-[#2a2b36] rounded text-xs space-y-1">
-                      <div className="text-red-400 font-bold">На автора: {rep.author}</div>
-                      <div className="text-gray-300">Причина: {rep.reason}</div>
+            <form onSubmit={handleAddReply} className="bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl space-y-3">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Ответить</h3>
+              <textarea 
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Ваш ответ..."
+                className="w-full bg-[#0d0e12] border border-gray-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500/50 h-24 resize-none"
+              ></textarea>
+              <div className="flex justify-end">
+                <button type="submit" className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-5 py-2 rounded-xl text-xs transition">
+                  Отправить
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ================= 3. ГЕНЕРАТОР КЛЮЧЕЙ ================= */}
+        {activeTab === 'keygen' && (
+          <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="bg-[#13141c] border border-purple-900/40 p-6 rounded-2xl flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Key className="text-purple-400" size={22} /> Генератор лицензий (Owner Access)
+                </h1>
+                <p className="text-xs text-gray-400 mt-1">Полный доступ ко всем функциям создания подписок</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <form onSubmit={handleGenerateKeys} className="bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl space-y-4">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-gray-800/60 pb-2">Параметры</h3>
+                
+                <div className="space-y-1.5">
+                  <label className="text-xs text-gray-400">Срок действия</label>
+                  <select 
+                    value={keyDuration}
+                    onChange={(e) => setKeyDuration(e.target.value)}
+                    className="w-full bg-[#0d0e12] border border-gray-800 text-xs text-white rounded-xl p-2.5 outline-none"
+                  >
+                    <option value="lifetime">Lifetime (Навсегда)</option>
+                    <option value="30_days">30 Дней</option>
+                    <option value="1_day">1 День</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs text-gray-400">Количество</label>
+                  <input 
+                    type="number" min="1" max="50" value={keyAmount}
+                    onChange={(e) => setKeyAmount(e.target.value)}
+                    className="w-full bg-[#0d0e12] border border-gray-800 text-xs text-white rounded-xl p-2.5 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs text-gray-400">Заметка</label>
+                  <input 
+                    type="text" placeholder="Метка ключа..." value={keyNote}
+                    onChange={(e) => setKeyNote(e.target.value)}
+                    className="w-full bg-[#0d0e12] border border-gray-800 text-xs text-white rounded-xl p-2.5 outline-none"
+                  />
+                </div>
+
+                <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-2.5 rounded-xl text-xs transition">
+                  Сгенерировать
+                </button>
+              </form>
+
+              <div className="md:col-span-2 bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl space-y-4">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-gray-800/60 pb-2">
+                  Созданные ключи ({generatedKeys.length})
+                </h3>
+                <div className="space-y-2 max-h-[340px] overflow-y-auto">
+                  {generatedKeys.length === 0 ? (
+                    <div className="text-xs text-gray-500 py-12 text-center">Список пуст</div>
+                  ) : (
+                    generatedKeys.map(k => (
+                      <div key={k.id} className="p-3 bg-[#0d0e12] border border-gray-800 rounded-xl flex items-center justify-between text-xs">
+                        <div>
+                          <span className="font-mono font-bold text-purple-300 tracking-wider">{k.key}</span>
+                          <span className="ml-2 text-[10px] bg-purple-950/60 text-purple-400 border border-purple-800 px-1.5 py-0.2 rounded">{k.duration}</span>
+                        </div>
+                        <button onClick={() => copyToClipboard(k.key, k.id)} className="p-2 bg-gray-800 text-gray-300 rounded-lg">
+                          {copiedKey === k.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= 4. ПРОФИЛЬ (OWNER) ================= */}
+        {activeTab === 'profile' && (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="bg-[#13141c] border border-gray-800/80 rounded-2xl overflow-hidden">
+              <div className="h-36 bg-gradient-to-r from-amber-950/50 via-orange-950/40 to-gray-900 border-b border-gray-800/80"></div>
+              
+              <div className="px-6 pb-6 relative flex flex-col md:flex-row items-start md:items-end justify-between gap-4 -mt-12">
+                <div className="flex items-end gap-4">
+                  <img src={currentUser.avatar} alt="Avatar" className="w-24 h-24 rounded-2xl border-4 border-[#13141c] object-cover bg-gray-900 shadow-xl" />
+                  <div className="mb-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-white">{currentUser.username}</h2>
+                      <span className="text-xs px-2.5 py-0.5 rounded-md border border-amber-600 bg-amber-950/70 text-amber-400 font-bold flex items-center gap-1">
+                        <Crown size={12} /> OWNER
+                      </span>
                     </div>
-                  ))
-                )}
+                    <span className="text-xs text-amber-400 font-mono font-semibold">UID #{currentUser.uid}</span>
+                  </div>
+                </div>
+
+                <div className="bg-[#0d0e12] border border-amber-500/30 px-4 py-2 rounded-xl text-center">
+                  <div className="text-[10px] text-gray-500 uppercase">Статус доступа</div>
+                  <div className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Root Owner (Full Control)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl text-center">
+                <div className="text-xs text-gray-500 uppercase">Уникальный UID</div>
+                <div className="text-2xl font-black text-amber-400 font-mono">#{currentUser.uid}</div>
+              </div>
+              <div className="bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl text-center">
+                <div className="text-xs text-gray-500 uppercase">Репутация</div>
+                <div className="text-2xl font-black text-white font-mono">{currentUser.reputation}</div>
+              </div>
+              <div className="bg-[#13141c] border border-gray-800/80 p-5 rounded-2xl text-center">
+                <div className="text-xs text-gray-500 uppercase">Уровень привилегий</div>
+                <div className="text-2xl font-black text-emerald-400 font-mono">MAX</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= 5. УПРАВЛЕНИЕ АКТИВАЦИЯМИ ================= */}
+        {activeTab === 'admin' && (
+          <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="bg-[#13141c] border border-amber-600/30 p-5 rounded-2xl flex justify-between items-center">
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Crown className="text-amber-400" size={20} /> Панель Владельца (Owner Root Control)
+              </h2>
+              <span className="text-xs font-mono text-gray-400">Система UID активна</span>
+            </div>
+
+            <div className="bg-[#13141c] border border-gray-800/80 rounded-2xl p-5 space-y-4">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Список аккаунтов в системе</h3>
+              <div className="p-3 bg-[#0d0e12] border border-amber-500/40 rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-amber-400 font-bold bg-amber-950/60 px-2 py-1 rounded border border-amber-800">
+                    UID #{currentUser.uid}
+                  </span>
+                  <span className="font-bold text-white">{currentUser.username}</span>
+                </div>
+                <span className="text-amber-400 font-bold border border-amber-600 bg-amber-950/70 px-2.5 py-1 rounded text-[10px]">
+                  System Owner
+                </span>
               </div>
             </div>
           </div>
