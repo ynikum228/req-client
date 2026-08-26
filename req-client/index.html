@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REQ-Client · CS2 Utility & Optimizer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Навигация -->
+    <header class="navbar">
+        <div class="wrap nav-content">
+            <a href="#" class="logo" onclick="switchTab('main')">
+                <i class="fas fa-terminal"></i>
+                <span>REQ-CLIENT</span>
+            </a>
+            <nav class="nav-links">
+                <a href="#" onclick="switchTab('main')">Главная</a>
+                <a href="#" onclick="switchTab('forum')">Форум</a>
+                <a href="#" onclick="switchTab('admin')">Админ-панель <span class="badge-free">OPEN</span></a>
+            </nav>
+            <div class="auth-buttons" id="navAuth">
+                <!-- Заполняется динамически через JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- СЕКЦИЯ: ГЛАВНАЯ СТРАНИЦА -->
+    <main id="tab-main" class="tab-content active">
+        <section class="hero">
+            <div class="wrap hero-body">
+                <span class="tag"><i class="fas fa-fire"></i> Shadow Fiend Edition</span>
+                <h1>Максимальный FPS и отклик в CS2</h1>
+                <p>Единая экосистема для настройки конфигов, автооптимизации реестра и тонкой подстройки параметров запуска Counter-Strike 2.</p>
+                
+                <div class="hero-card">
+                    <div class="price-header">
+                        <span class="price-title">Премиум Доступ</span>
+                        <div class="price-val">150 ₽ <span>/ месяц</span></div>
+                    </div>
+                    <ul class="features-list">
+                        <li><i class="fas fa-check"></i> Доступ ко всем пресетам оптимизации</li>
+                        <li><i class="fas fa-check"></i> Кастомные HUD & UI конфиги</li>
+                        <li><i class="fas fa-check"></i> Приватный раздел форума</li>
+                        <li><i class="fas fa-check"></i> Автоматические обновления лаунчера</li>
+                    </ul>
+                    <button class="btn btn-primary btn-block" onclick="openPaymentModal()">Оформить подписку</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- СЕКЦИЯ: ФОРУМ -->
+    <main id="tab-forum" class="tab-content">
+        <div class="wrap page-padding">
+            <div class="bar">
+                <div>
+                    <h2>Форум сообщества</h2>
+                    <p>Обсуждения, пресеты и техническая поддержка</p>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('createTopicModal')"><i class="fas fa-plus"></i> Новая тема</button>
+            </div>
+
+            <div class="topics-list" id="topicsContainer">
+                <!-- Рендер тем через JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- СЕКЦИЯ: АДМИН-ПАНЕЛЬ (ВРЕМЕННО ОТКРЫТА) -->
+    <main id="tab-admin" class="tab-content">
+        <div class="wrap page-padding">
+            <div class="admin-notice">
+                <i class="fas fa-unlock"></i>
+                <div>
+                    <strong>Временный режим:</strong> Доступ к админ-панели открыт для всех пользователей на время тестирования.
+                </div>
+            </div>
+
+            <div class="admin-grid">
+                <div class="card">
+                    <h3>Подписки и заказы (150 ₽/мес)</h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Пользователь</th>
+                                    <th>Статус</th>
+                                    <th>Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminOrdersTable">
+                                <!-- Данные из JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Управление пользователями</h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Логин</th>
+                                    <th>Роль</th>
+                                    <th>Изменить</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTable">
+                                <!-- Данные из JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <!-- Оплата -->
+    <div class="modal" id="payModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Оформление подписки REQ-Client</h3>
+                <button class="close-btn" onclick="closeModal('payModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="pay-amount">К оплате: <strong>150 ₽</strong></div>
+                <div class="form-group">
+                    <label>Ваш Email для привязки ключа</label>
+                    <input type="email" id="payEmail" placeholder="example@mail.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Способ оплаты</label>
+                    <select id="payMethod">
+                        <option>Банковская карта (СБП)</option>
+                        <option>ЮMoney</option>
+                        <option>Crypto</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="processPayment()">Оплатить 150 ₽</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Создание темы -->
+    <div class="modal" id="createTopicModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Создать тему на форуме</h3>
+                <button class="close-btn" onclick="closeModal('createTopicModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Заголовок темы</label>
+                    <input type="text" id="topicTitle" placeholder="Например: Лучший autoexec для CS2">
+                </div>
+                <div class="form-group">
+                    <label>Сообщение</label>
+                    <textarea id="topicBody" rows="4" placeholder="Текст вашей темы..."></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="createTopic()">Опубликовать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Авторизация/Регистрация -->
+    <div class="modal" id="authModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="authModalTitle">Вход в аккаунт</h3>
+                <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Логин</label>
+                    <input type="text" id="authLogin" placeholder="Введите логин">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="authPassword" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="handleAuth()" id="authSubmitBtn">Войти</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
