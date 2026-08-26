@@ -9,63 +9,61 @@ const ROLES = {
     support: { title: 'Агент поддержки', class: 'role-support' }
 };
 
-// Функция отрисовки красивого бейджа роли
+// Функция отрисовки плашки роли
 function getRoleBadgeHtml(roleKey) {
     const role = ROLES[roleKey] || ROLES.user;
     return `<span class="role-badge ${role.class}">${role.title}</span>`;
 }
 
-// Default State
+// Базовые данные по умолчанию
 const defaultState = {
     currentUser: { 
-        login: '-812', 
+        login: 'requiem', 
         role: 'dev',
-        rep: 12, 
-        posts: 6, 
-        regDate: '2 августа',
+        rep: 21, 
+        posts: 1, 
+        regDate: 'Сегодня',
         avatar: 'https://i.imgur.com/8Km9tLL.png',
-        cover: 'linear-gradient(135deg, #2b1b36 0%, #150d1a 50%, #3d1b28 100%)'
+        cover: ''
     },
     orders: [
         { id: 101, email: 'user@example.com', status: 'Оплачено (150 ₽)' }
     ],
     users: [
-        { login: '-812', role: 'dev', rep: 12 },
-        { login: 'Admin', role: 'admin', rep: 99 },
+        { login: 'requiem', role: 'dev', rep: 21 },
+        { login: '-812', role: 'admin', rep: 12 },
         { login: 'Tester_John', role: 'tester', rep: 5 },
         { login: 'Support_Alex', role: 'support', rep: 14 }
     ],
     topics: [
         { 
             id: 1, 
-            title: '[Семья Roysfield] Заявление на трудоустройство в ЧОП "КитКат"', 
-            author: '-812', 
-            likes: 4,
+            title: 'вфы', 
+            author: 'requiem', 
+            likes: 0,
             posts: [
-                { author: '-812', text: 'Заместителю директора ЧОП "КитКат" Ройсфилду Нео Марселовичу от гражданина Республики Провинция. Прошу трудоустроить меня на должность сотрудника охраны.', date: '16 августа' },
-                { author: 'Admin', text: 'Заявление рассмотрено. Одобрено!', date: '16 августа' }
+                { author: 'requiem', text: 'Первое тестовое сообщение темы.', date: 'Только что' }
             ]
         },
         { 
             id: 2, 
-            title: 'Forum Games | Никнеймы', 
-            author: '-812', 
-            likes: 2,
-            posts: [
-                { author: '-812', text: 'Пишем свой игровой никнейм ниже!', date: '16 августа' }
-            ] 
-        },
-        { 
-            id: 3, 
             title: 'Оптимизация FPS в CS2 на слабых ПК', 
-            author: 'Admin', 
+            author: '-812', 
             likes: 18,
             posts: [
-                { author: 'Admin', text: 'Инструкция по настройке параметром запуска и системного конфига.', date: '10 августа' }
+                { author: '-812', text: 'Инструкция по настройке параметров запуска и системного конфига.', date: '10 августа' }
             ] 
         }
     ]
 };
+
+// Сброс старого localStorage при обновлении версий ролей
+(function checkVersion() {
+    if (!localStorage.getItem('req_v2')) {
+        localStorage.removeItem('req_state');
+        localStorage.setItem('req_v2', 'true');
+    }
+})();
 
 function getState() {
     const data = localStorage.getItem('req_state');
@@ -78,23 +76,24 @@ function saveState(state) {
 }
 
 function escapeHtml(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Navigation & Modals
+// Переключение вкладок
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     const target = document.getElementById(`tab-${tabName}`);
     if (target) target.classList.add('active');
 }
 
+// Управление модалками
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openPaymentModal() { openModal('payModal'); }
 
-// Topic Reader Engine
+// Просмотр тем (Исправлено переключение)
 function openTopic(id) {
-    currentTopicId = id;
+    currentTopicId = Number(id);
     switchTab('topic-view');
     renderTopicView();
 }
@@ -104,10 +103,15 @@ function renderTopicView() {
     const topic = state.topics.find(t => t.id === currentTopicId);
     if (!topic) return;
 
-    document.getElementById('viewTopicTitle').textContent = topic.title;
-    document.getElementById('viewTopicMeta').innerHTML = `Автор: <strong>${escapeHtml(topic.author)}</strong> | Сообщений: ${topic.posts.length}`;
+    const titleEl = document.getElementById('viewTopicTitle');
+    const metaEl = document.getElementById('viewTopicMeta');
+    
+    if (titleEl) titleEl.textContent = topic.title;
+    if (metaEl) metaEl.innerHTML = `Автор: <strong>${escapeHtml(topic.author)}</strong> | Сообщений: ${topic.posts.length}`;
 
     const container = document.getElementById('topicRepliesContainer');
+    if (!container) return;
+
     container.innerHTML = topic.posts.map(p => {
         const authorObj = state.users.find(u => u.login === p.author) || { role: 'user' };
         return `
@@ -129,7 +133,8 @@ function renderTopicView() {
 }
 
 function submitReply() {
-    const text = document.getElementById('newReplyText').value;
+    const input = document.getElementById('newReplyText');
+    const text = input.value.trim();
     if (!text) return alert('Введите текст ответа!');
 
     const state = getState();
@@ -148,12 +153,12 @@ function submitReply() {
         }
 
         saveState(state);
-        document.getElementById('newReplyText').value = '';
+        input.value = '';
         renderTopicView();
     }
 }
 
-// Profile Customization
+// Изменение профиля
 function changeAvatar() {
     const url = prompt('Введите URL новой аватарки:');
     if (url) {
@@ -176,26 +181,10 @@ function changeCover() {
     }
 }
 
-// Core Functions
-function processPayment() {
-    const email = document.getElementById('payEmail').value;
-    if (!email) return alert('Введите ваш Email!');
-
-    const state = getState();
-    state.orders.push({
-        id: Math.floor(100 + Math.random() * 900),
-        email: email,
-        status: 'Оплачено (150 ₽)'
-    });
-    
-    saveState(state);
-    closeModal('payModal');
-    alert('Оплата на 150 ₽ прошла успешно!');
-}
-
+// Создание тем и лайки
 function createTopic() {
-    const title = document.getElementById('topicTitle').value;
-    const body = document.getElementById('topicBody').value || title;
+    const title = document.getElementById('topicTitle').value.trim();
+    const body = document.getElementById('topicBody').value.trim() || title;
     const state = getState();
     
     if(!title) return alert('Заполните заголовок!');
@@ -223,7 +212,7 @@ function createTopic() {
 }
 
 function likeTopic(topicId, event) {
-    event.stopPropagation();
+    if (event) event.stopPropagation();
     const state = getState();
     const topic = state.topics.find(t => t.id === topicId);
     
@@ -238,7 +227,7 @@ function likeTopic(topicId, event) {
     }
 }
 
-// Auth Logic
+// Авторизация
 function openAuth(type) {
     document.getElementById('authModalTitle').textContent = type === 'login' ? 'Авторизация' : 'Регистрация';
     document.getElementById('authSubmitBtn').textContent = type === 'login' ? 'Войти' : 'Зарегистрироваться';
@@ -246,11 +235,12 @@ function openAuth(type) {
 }
 
 function handleAuth() {
-    const login = document.getElementById('authLogin').value;
+    const login = document.getElementById('authLogin').value.trim();
     if(!login) return alert('Введите логин!');
 
     const state = getState();
-    let userObj = state.users.find(u => u.login === login);
+    let userObj = state.users.find(u => u.login.toLowerCase() === login.toLowerCase());
+    
     if (!userObj) {
         userObj = { login: login, role: 'user', rep: 0 };
         state.users.push(userObj);
@@ -281,7 +271,7 @@ function deleteOrder(id) {
     saveState(state);
 }
 
-// Смена роли пользователя из Админки
+// Смена роли пользователя в Админке
 function changeUserRole(login, newRole) {
     const state = getState();
     const u = state.users.find(x => x.login === login);
@@ -294,17 +284,33 @@ function changeUserRole(login, newRole) {
     }
 }
 
-// Render Engine
+function processPayment() {
+    const email = document.getElementById('payEmail').value;
+    if (!email) return alert('Введите ваш Email!');
+
+    const state = getState();
+    state.orders.push({
+        id: Math.floor(100 + Math.random() * 900),
+        email: email,
+        status: 'Оплачено (150 ₽)'
+    });
+    
+    saveState(state);
+    closeModal('payModal');
+    alert('Оплата на 150 ₽ прошла успешно!');
+}
+
+// Главный рендер интерфейса
 function render() {
     const state = getState();
     const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-' };
 
-    // 1. Auth Header
+    // 1. Шапка авторизации
     const authNav = document.getElementById('navAuth');
     if (authNav) {
         if (state.currentUser) {
             authNav.innerHTML = `
-                <a href="#" onclick="switchTab('profile')" style="color:var(--yellow); font-size:13px; font-weight:700; text-decoration:none;">
+                <a href="#" onclick="switchTab('profile'); return false;" style="color:var(--yellow); font-size:13px; font-weight:700; text-decoration:none;">
                     <i class="fas fa-user-circle"></i> ${escapeHtml(state.currentUser.login)}
                 </a>
                 <button class="btn btn-outline btn-sm" onclick="logout()">Выйти</button>
@@ -317,7 +323,7 @@ function render() {
         }
     }
 
-    // 2. Profile View
+    // 2. Рендер Профиля (Отображение роли под ником)
     if (document.getElementById('profUsername')) {
         document.getElementById('profUsername').textContent = user.login;
         document.getElementById('profGroup').innerHTML = getRoleBadgeHtml(user.role);
@@ -335,7 +341,7 @@ function render() {
         document.getElementById('profRepStatus').textContent = status;
     }
 
-    // 3. Forum Topics View
+    // 3. Список тем на Форуме (Клик на тему открывает её)
     const forumContainer = document.getElementById('topicsContainer');
     if (forumContainer) {
         forumContainer.innerHTML = state.topics.map(t => `
@@ -356,7 +362,7 @@ function render() {
         `).join('');
     }
 
-    // 4. Activity Feed
+    // 4. Лента активности профиля
     const activityFeed = document.getElementById('profileActivityFeed');
     if (activityFeed) {
         const userTopics = state.topics.filter(t => t.author === user.login);
@@ -368,7 +374,7 @@ function render() {
                     <i class="fas fa-comment act-icon"></i>
                     <div class="act-body">
                         <h5>${escapeHtml(t.title)}</h5>
-                        <p><strong>${escapeHtml(user.login)}</strong> создал тему на форуме</p>
+                        <p><strong>${escapeHtml(user.login)}</strong> ответил или создал тему на форуме</p>
                         <span class="act-date">Недавно</span>
                     </div>
                 </div>
@@ -376,7 +382,7 @@ function render() {
         }
     }
 
-    // 5. Admin Panel Tables
+    // 5. Админ-Панель (Управление 5-ю ролями)
     const ordersTbody = document.getElementById('adminOrdersTable');
     if (ordersTbody) {
         ordersTbody.innerHTML = state.orders.map(o => `
