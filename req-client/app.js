@@ -1,6 +1,5 @@
 let currentTopicId = null;
 
-// Список ролей и их настроек
 const ROLES = {
     user: { title: 'Пользователь', class: 'role-user' },
     admin: { title: 'Администратор', class: 'role-admin' },
@@ -9,13 +8,11 @@ const ROLES = {
     support: { title: 'Агент поддержки', class: 'role-support' }
 };
 
-// Функция отрисовки плашки роли
 function getRoleBadgeHtml(roleKey) {
     const role = ROLES[roleKey] || ROLES.user;
     return `<span class="role-badge ${role.class}">${role.title}</span>`;
 }
 
-// Базовые данные по умолчанию
 const defaultState = {
     currentUser: { 
         login: 'requiem', 
@@ -24,44 +21,38 @@ const defaultState = {
         posts: 1, 
         regDate: 'Сегодня',
         avatar: 'https://i.imgur.com/8Km9tLL.png',
-        cover: ''
+        cover: '',
+        warns: 0,
+        banUntil: null
     },
     orders: [
         { id: 101, email: 'user@example.com', status: 'Оплачено (150 ₽)' }
     ],
     users: [
-        { login: 'requiem', role: 'dev', rep: 21 },
-        { login: '-812', role: 'admin', rep: 12 },
-        { login: 'Tester_John', role: 'tester', rep: 5 },
-        { login: 'Support_Alex', role: 'support', rep: 14 }
+        { login: 'requiem', role: 'dev', rep: 21, warns: 0, banUntil: null },
+        { login: '-812', role: 'admin', rep: 12, warns: 0, banUntil: null },
+        { login: 'Tester_John', role: 'tester', rep: 5, warns: 0, banUntil: null },
+        { login: 'Support_Alex', role: 'support', rep: 14, warns: 0, banUntil: null }
     ],
     topics: [
         { 
             id: 1, 
-            title: 'вфы', 
+            title: 'Тестовая тема', 
             author: 'requiem', 
-            likes: 0,
+            likes: [], // Теперь храним массив логинов лайкнувших
             posts: [
-                { author: 'requiem', text: 'Первое тестовое сообщение темы.', date: 'Только что' }
+                { id: 1001, author: 'requiem', text: 'Первое тестовое сообщение темы.', date: 'Только что', likes: [] }
             ]
-        },
-        { 
-            id: 2, 
-            title: 'Оптимизация FPS в CS2 на слабых ПК', 
-            author: '-812', 
-            likes: 18,
-            posts: [
-                { author: '-812', text: 'Инструкция по настройке параметров запуска и системного конфига.', date: '10 августа' }
-            ] 
         }
-    ]
+    ],
+    reports: [] // Список жалоб
 };
 
-// Сброс старого localStorage при обновлении версий ролей
+// Проверка сброса старого кэша
 (function checkVersion() {
-    if (!localStorage.getItem('req_v2')) {
+    if (localStorage.getItem('req_v3') !== 'true') {
         localStorage.removeItem('req_state');
-        localStorage.setItem('req_v2', 'true');
+        localStorage.setItem('req_v3', 'true');
     }
 })();
 
@@ -79,19 +70,35 @@ function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Переключение вкладок
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     const target = document.getElementById(`tab-${tabName}`);
     if (target) target.classList.add('active');
 }
 
-// Управление модалками
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openPaymentModal() { openModal('payModal'); }
 
-// Просмотр тем (Исправлено переключение)
+// Проверка блокировок
+function checkBanStatus(user) {
+    if (!user) return { isBanned: false };
+
+    const warns = user.warns || 0;
+    
+    if (warns >= 80) {
+        return { isBanned: true, isPermanent: true, reason: 'Форум закрыт навсегда (80+ баллов)' };
+    }
+
+    if (user.banUntil && new Date(user.banUntil) > new Date()) {
+        const daysLeft = Math.ceil((new Date(user.banUntil) - new Date()) / (1000 * 60 * 60 * 24));
+        return { isBanned: true, isPermanent: false, daysLeft: daysLeft };
+    }
+
+    return { isBanned: false };
+}
+
+// Открытие темы
 function openTopic(id) {
     currentTopicId = Number(id);
     switchTab('topic-view');
@@ -103,17 +110,18 @@ function renderTopicView() {
     const topic = state.topics.find(t => t.id === currentTopicId);
     if (!topic) return;
 
-    const titleEl = document.getElementById('viewTopicTitle');
-    const metaEl = document.getElementById('viewTopicMeta');
-    
-    if (titleEl) titleEl.textContent = topic.title;
-    if (metaEl) metaEl.innerHTML = `Автор: <strong>${escapeHtml(topic.author)}</strong> | Сообщений: ${topic.posts.length}`;
+    document.getElementById('viewTopicTitle').textContent = topic.title;
+    document.getElementById('viewTopicMeta').innerHTML = `Автор: <strong>${escapeHtml(topic.author)}</strong> | Сообщений: ${topic.posts.length}`;
 
     const container = document.getElementById('topicRepliesContainer');
-    if (!container) return;
+    const user = state.currentUser;
+    const banInfo = checkBanStatus(user);
 
     container.innerHTML = topic.posts.map(p => {
         const authorObj = state.users.find(u => u.login === p.author) || { role: 'user' };
+        const likesArr = p.likes || [];
+        const isLiked = user && likesArr.includes(user.login);
+
         return `
             <div class="post-card">
                 <div class="post-author-box">
@@ -125,40 +133,185 @@ function renderTopicView() {
                     <div class="post-text">${escapeHtml(p.text)}</div>
                     <div class="post-footer">
                         <span>Опубликовано: ${p.date || 'Недавно'}</span>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button class="btn btn-outline btn-sm ${isLiked ? 'active' : ''}" onclick="toggleLikePost(${topic.id}, ${p.id})">
+                                <i class="fas fa-heart" style="color:${isLiked ? '#ff4d4d' : '#85705a'};"></i> ${likesArr.length}
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="reportPost('${p.author}', '${escapeHtml(p.text.substring(0, 30))}')" style="color:#ff6b6b; border-color:rgba(255,107,107,0.3);">
+                                <i class="fas fa-flag"></i> Жалоба
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     }).join('');
+
+    // Ограничение формы ответа при бане
+    const replyCard = document.getElementById('replyFormContainer');
+    if (replyCard) {
+        if (banInfo.isBanned) {
+            replyCard.innerHTML = `<div style="color:#ff4d4d; font-weight:700; text-align:center; padding:15px; border:1px solid #ff4d4d; border-radius:10px;">
+                Вам запрещено писать на форуме! ${banInfo.isPermanent ? 'Доступ закрыт навсегда.' : `Осталось дней блокировки: ${banInfo.daysLeft}`}
+            </div>`;
+        } else {
+            replyCard.innerHTML = `
+                <h3>Оставить ответ</h3>
+                <div class="form-group">
+                    <textarea id="newReplyText" rows="4" placeholder="Напишите ваш ответ..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="submitReply()"><i class="fas fa-paper-plane"></i> Отправить ответ</button>
+            `;
+        }
+    }
 }
 
+// Поставить / Убрать лайк (Фикс бага репутации)
+function toggleLikePost(topicId, postId) {
+    const state = getState();
+    if (!state.currentUser) return alert('Авторизуйтесь!');
+
+    const topic = state.topics.find(t => t.id === topicId);
+    if (!topic) return;
+
+    const post = topic.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    if (!post.likes) post.likes = [];
+    const userIndex = post.likes.indexOf(state.currentUser.login);
+    const authorObj = state.users.find(u => u.login === post.author);
+
+    if (userIndex === -1) {
+        post.likes.push(state.currentUser.login);
+        if (authorObj) authorObj.rep = (authorObj.rep || 0) + 1;
+        if (state.currentUser.login === post.author) state.currentUser.rep += 1;
+    } else {
+        post.likes.splice(userIndex, 1);
+        if (authorObj) authorObj.rep = Math.max(0, (authorObj.rep || 0) - 1);
+        if (state.currentUser.login === post.author) state.currentUser.rep = Math.max(0, state.currentUser.rep - 1);
+    }
+
+    saveState(state);
+    renderTopicView();
+}
+
+// Отправка ответа
 function submitReply() {
+    const state = getState();
+    const user = state.currentUser;
+    const banInfo = checkBanStatus(user);
+
+    if (banInfo.isBanned) return alert('У вас блокировка на форуме!');
+
     const input = document.getElementById('newReplyText');
-    const text = input.value.trim();
+    const text = input ? input.value.trim() : '';
     if (!text) return alert('Введите текст ответа!');
 
-    const state = getState();
     const topic = state.topics.find(t => t.id === currentTopicId);
-    const authorName = state.currentUser ? state.currentUser.login : 'Гость';
 
     if (topic) {
         topic.posts.push({
-            author: authorName,
+            id: Date.now(),
+            author: user.login,
             text: text,
-            date: 'Только что'
+            date: 'Только что',
+            likes: []
         });
 
-        if (state.currentUser) {
-            state.currentUser.posts = (state.currentUser.posts || 0) + 1;
-        }
-
+        user.posts = (user.posts || 0) + 1;
         saveState(state);
-        input.value = '';
         renderTopicView();
     }
 }
 
-// Изменение профиля
+// Подача жалобы
+function reportPost(targetAuthor, previewText) {
+    const state = getState();
+    if (!state.currentUser) return alert('Авторизуйтесь!');
+
+    const reason = prompt(`Укажите причину жалобы на ${targetAuthor}:`);
+    if (reason) {
+        state.reports.push({
+            id: Date.now(),
+            sender: state.currentUser.login,
+            target: targetAuthor,
+            text: previewText,
+            reason: reason,
+            date: 'Только что'
+        });
+        saveState(state);
+        alert('Жалоба отправлена модераторам!');
+    }
+}
+
+// Выдача баллов нарушений из Админки
+function addWarnPoints(username, points) {
+    const state = getState();
+    const u = state.users.find(x => x.login === username);
+    if (!u) return;
+
+    u.warns = (u.warns || 0) + points;
+
+    // Вычисление бана
+    if (u.warns >= 80) {
+        u.banUntil = 'PERMANENT';
+    } else if (u.warns >= 30) {
+        let date = new Date();
+        date.setDate(date.getDate() + 30);
+        u.banUntil = date.toISOString();
+    } else if (u.warns >= 10) {
+        let date = new Date();
+        date.setDate(date.getDate() + 7);
+        u.banUntil = date.toISOString();
+    }
+
+    if (state.currentUser && state.currentUser.login === username) {
+        state.currentUser.warns = u.warns;
+        state.currentUser.banUntil = u.banUntil;
+    }
+
+    saveState(state);
+    alert(`Пользователю ${username} добавлено +${points} баллов! Всего: ${u.warns}`);
+}
+
+function dismissReport(id) {
+    const state = getState();
+    state.reports = state.reports.filter(r => r.id !== id);
+    saveState(state);
+}
+
+// Создание тем
+function createTopic() {
+    const state = getState();
+    const banInfo = checkBanStatus(state.currentUser);
+
+    if (banInfo.isBanned) return alert('Ваш аккаунт заблокирован! Вы не можете создавать темы.');
+
+    const title = document.getElementById('topicTitle').value.trim();
+    const body = document.getElementById('topicBody').value.trim() || title;
+
+    if(!title) return alert('Заполните заголовок!');
+
+    const authorName = state.currentUser ? state.currentUser.login : 'Гость';
+
+    state.topics.unshift({
+        id: Date.now(),
+        title: title,
+        author: authorName,
+        posts: [
+            { id: Date.now() + 1, author: authorName, text: body, date: 'Только что', likes: [] }
+        ]
+    });
+
+    if (state.currentUser) state.currentUser.posts = (state.currentUser.posts || 0) + 1;
+
+    saveState(state);
+    closeModal('createTopicModal');
+    document.getElementById('topicTitle').value = '';
+    document.getElementById('topicBody').value = '';
+}
+
+// Изменение аватара / обложки
 function changeAvatar() {
     const url = prompt('Введите URL новой аватарки:');
     if (url) {
@@ -181,52 +334,6 @@ function changeCover() {
     }
 }
 
-// Создание тем и лайки
-function createTopic() {
-    const title = document.getElementById('topicTitle').value.trim();
-    const body = document.getElementById('topicBody').value.trim() || title;
-    const state = getState();
-    
-    if(!title) return alert('Заполните заголовок!');
-
-    const authorName = state.currentUser ? state.currentUser.login : 'Гость';
-
-    state.topics.unshift({
-        id: Date.now(),
-        title: title,
-        author: authorName,
-        likes: 0,
-        posts: [
-            { author: authorName, text: body, date: 'Только что' }
-        ]
-    });
-
-    if (state.currentUser) {
-        state.currentUser.posts = (state.currentUser.posts || 0) + 1;
-    }
-
-    saveState(state);
-    closeModal('createTopicModal');
-    document.getElementById('topicTitle').value = '';
-    document.getElementById('topicBody').value = '';
-}
-
-function likeTopic(topicId, event) {
-    if (event) event.stopPropagation();
-    const state = getState();
-    const topic = state.topics.find(t => t.id === topicId);
-    
-    if (topic) {
-        topic.likes = (topic.likes || 0) + 1;
-        const author = state.users.find(u => u.login === topic.author);
-        if (author) author.rep = (author.rep || 0) + 1;
-        if (state.currentUser && state.currentUser.login === topic.author) {
-            state.currentUser.rep = (state.currentUser.rep || 0) + 1;
-        }
-        saveState(state);
-    }
-}
-
 // Авторизация
 function openAuth(type) {
     document.getElementById('authModalTitle').textContent = type === 'login' ? 'Авторизация' : 'Регистрация';
@@ -242,7 +349,7 @@ function handleAuth() {
     let userObj = state.users.find(u => u.login.toLowerCase() === login.toLowerCase());
     
     if (!userObj) {
-        userObj = { login: login, role: 'user', rep: 0 };
+        userObj = { login: login, role: 'user', rep: 0, warns: 0, banUntil: null };
         state.users.push(userObj);
     }
 
@@ -252,7 +359,9 @@ function handleAuth() {
         rep: userObj.rep || 0,
         posts: 0,
         regDate: 'Сегодня',
-        avatar: 'https://i.imgur.com/8Km9tLL.png'
+        avatar: 'https://i.imgur.com/8Km9tLL.png',
+        warns: userObj.warns || 0,
+        banUntil: userObj.banUntil || null
     };
 
     saveState(state);
@@ -271,7 +380,6 @@ function deleteOrder(id) {
     saveState(state);
 }
 
-// Смена роли пользователя в Админке
 function changeUserRole(login, newRole) {
     const state = getState();
     const u = state.users.find(x => x.login === login);
@@ -297,15 +405,15 @@ function processPayment() {
     
     saveState(state);
     closeModal('payModal');
-    alert('Оплата на 150 ₽ прошла успешно!');
+    alert('Оплата прошла успешно!');
 }
 
-// Главный рендер интерфейса
+// Главный рендер
 function render() {
     const state = getState();
-    const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-' };
+    const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-', warns: 0 };
 
-    // 1. Шапка авторизации
+    // 1. Шапка
     const authNav = document.getElementById('navAuth');
     if (authNav) {
         if (state.currentUser) {
@@ -323,13 +431,14 @@ function render() {
         }
     }
 
-    // 2. Рендер Профиля (Отображение роли под ником)
+    // 2. Профиль (включая счетчик баллов нарушений)
     if (document.getElementById('profUsername')) {
         document.getElementById('profUsername').textContent = user.login;
         document.getElementById('profGroup').innerHTML = getRoleBadgeHtml(user.role);
         document.getElementById('profPosts').textContent = user.posts || 0;
         document.getElementById('profReg').textContent = user.regDate || '2 августа';
         document.getElementById('profRepScore').textContent = user.rep || 0;
+        document.getElementById('profWarns').textContent = user.warns || 0;
         
         if (user.avatar) document.getElementById('profAvatar').src = user.avatar;
         if (user.cover) document.getElementById('profCover').style.background = user.cover;
@@ -341,7 +450,7 @@ function render() {
         document.getElementById('profRepStatus').textContent = status;
     }
 
-    // 3. Список тем на Форуме (Клик на тему открывает её)
+    // 3. Список тем
     const forumContainer = document.getElementById('topicsContainer');
     if (forumContainer) {
         forumContainer.innerHTML = state.topics.map(t => `
@@ -349,32 +458,29 @@ function render() {
                 <div class="topic-clickable" onclick="openTopic(${t.id})">
                     <div class="topic-info">
                         <h4>${escapeHtml(t.title)}</h4>
-                        <p>Автор: <strong>${escapeHtml(t.author)}</strong> | Лайков: <span style="color:var(--accent); font-weight:700;">+${t.likes || 0}</span></p>
+                        <p>Автор: <strong>${escapeHtml(t.author)}</strong></p>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <button class="btn btn-outline btn-sm" onclick="likeTopic(${t.id}, event)">
-                        <i class="fas fa-heart" style="color:#e67e22;"></i> +1
-                    </button>
+                <div>
                     <span style="color:var(--yellow); font-size:13px; font-weight:700;">${t.posts ? t.posts.length : 0} ответов</span>
                 </div>
             </div>
         `).join('');
     }
 
-    // 4. Лента активности профиля
+    // 4. Активность
     const activityFeed = document.getElementById('profileActivityFeed');
     if (activityFeed) {
         const userTopics = state.topics.filter(t => t.author === user.login);
         if (userTopics.length === 0) {
-            activityFeed.innerHTML = '<p class="empty-text">Сообщение не может быть отображено т.к. находится в защищенном разделе или нет активности.</p>';
+            activityFeed.innerHTML = '<p class="empty-text">Нет активности.</p>';
         } else {
             activityFeed.innerHTML = userTopics.map(t => `
                 <div class="act-item" onclick="openTopic(${t.id})" style="cursor:pointer;">
                     <i class="fas fa-comment act-icon"></i>
                     <div class="act-body">
                         <h5>${escapeHtml(t.title)}</h5>
-                        <p><strong>${escapeHtml(user.login)}</strong> ответил или создал тему на форуме</p>
+                        <p><strong>${escapeHtml(user.login)}</strong> создал тему или ответ</p>
                         <span class="act-date">Недавно</span>
                     </div>
                 </div>
@@ -382,14 +488,14 @@ function render() {
         }
     }
 
-    // 5. Админ-Панель (Управление 5-ю ролями)
+    // 5. Админка
     const ordersTbody = document.getElementById('adminOrdersTable');
     if (ordersTbody) {
         ordersTbody.innerHTML = state.orders.map(o => `
             <tr>
                 <td>${escapeHtml(o.email)}</td>
                 <td><span style="color:#4cd964">${o.status}</span></td>
-                <td><button style="color:#ff4d4d; background:none; border:0; cursor:pointer; font-weight:700;" onclick="deleteOrder(${o.id})">Удалить</button></td>
+                <td><button style="color:#ff4d4d; background:none; border:0; cursor:pointer;" onclick="deleteOrder(${o.id})">Удалить</button></td>
             </tr>
         `).join('');
     }
@@ -400,10 +506,31 @@ function render() {
             <tr>
                 <td>${escapeHtml(u.login)}</td>
                 <td>${getRoleBadgeHtml(u.role)}</td>
+                <td><strong style="color:#ff6b6b">${u.warns || 0}</strong></td>
                 <td>
                     <select class="admin-select" onchange="changeUserRole('${u.login}', this.value)">
                         ${Object.keys(ROLES).map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLES[r].title}</option>`).join('')}
                     </select>
+                </td>
+                <td>
+                    <button class="btn btn-outline btn-sm" onclick="addWarnPoints('${u.login}', 10)">+10 б.</button>
+                    <button class="btn btn-outline btn-sm" onclick="addWarnPoints('${u.login}', 30)">+30 б.</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Рендер таблиц жалоб в админке
+    const reportsTbody = document.getElementById('adminReportsTable');
+    if (reportsTbody) {
+        reportsTbody.innerHTML = state.reports.map(r => `
+            <tr>
+                <td><strong>${escapeHtml(r.sender)}</strong></td>
+                <td><span style="color:#ff6b6b">${escapeHtml(r.target)}</span></td>
+                <td>${escapeHtml(r.reason)}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="addWarnPoints('${r.target}', 10); dismissReport(${r.id});">+10 б.</button>
+                    <button class="btn btn-outline btn-sm" onclick="dismissReport(${r.id})">Отклонить</button>
                 </td>
             </tr>
         `).join('');
