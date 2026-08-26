@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REQUIEM.FUN — Midnight Style</title>
+    <title>REQUIEM.FUN — Private CS2 Software</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #1a222d; color: #94a3b8; font-family: sans-serif; }
+        body { background-color: #1a222d; color: #94a3b8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .bg-custom-dark { background-color: #202b37; }
         .bg-custom-card { background-color: #263343; }
         .bg-custom-sidebar { background-color: #283748; }
         .border-custom { border-color: rgba(255, 255, 255, 0.08); }
         .text-accent { color: #38bdf8; }
         
-        /* Стилизация ползунка */
+        /* Стилизация слайдера */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -32,14 +32,24 @@
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
         }
 
-        .nav-link { border-bottom: 2px solid transparent; padding-bottom: 4px; transition: all 0.2s; }
+        .nav-link { border-bottom: 2px solid transparent; padding-bottom: 4px; transition: all 0.2s; cursor: pointer; }
         .nav-link.active { color: #ffffff; border-color: #38bdf8; }
+        
+        /* Анимация уведомлений */
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-animate { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-rose-600 selection:text-white">
 
-    <!-- ВЕРХНЯЯ НАВИГАЦИЯ MIDNIGHT STYLE -->
-    <header class="bg-custom-dark border-b border-custom px-6 py-3 sticky top-0 z-50">
+    <!-- ВСПОМОГАТЕЛЬНЫЕ УВЕДОМЛЕНИЯ (TOASTS) -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ВЕРХНЯЯ НАВИГАЦИЯ -->
+    <header class="bg-custom-dark border-b border-custom px-6 py-3 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto flex items-center justify-between text-sm">
             <div class="flex items-center space-x-6">
                 <div class="font-bold text-lg text-white tracking-widest flex items-center gap-2 cursor-pointer" onclick="switchPage('home')">
@@ -50,7 +60,7 @@
                     <button id="nav-forum" onclick="switchPage('forum')" class="nav-link hover:text-white">Форум</button>
                     <button id="nav-buy" onclick="switchPage('catalog')" class="nav-link hover:text-white">Купить</button>
                     <button id="nav-dash" onclick="switchPage('dash')" class="nav-link hover:text-white">Панель пользователя</button>
-                    <a href="#" class="nav-link hover:text-white">Поддержка</a>
+                    <button onclick="showToast('Раздел поддержки работает через тикеты в панели', 'info')" class="nav-link hover:text-white">Поддержка</button>
                 </nav>
             </div>
             <div class="flex items-center space-x-4 text-xs">
@@ -58,74 +68,99 @@
                     <div class="w-6 h-6 rounded-full bg-rose-900/50 border border-rose-500 text-rose-300 flex items-center justify-center font-bold text-[10px]">M</div>
                     <span class="text-white font-medium">Morphezy</span>
                 </div>
-                <i class="fa-regular fa-envelope cursor-pointer hover:text-white"></i>
-                <i class="fa-regular fa-bell cursor-pointer hover:text-white"></i>
-                <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-white"></i>
+                <i class="fa-regular fa-envelope cursor-pointer hover:text-white" onclick="showToast('У вас нет новых сообщений', 'info')"></i>
+                <i class="fa-regular fa-bell cursor-pointer hover:text-white" onclick="showToast('Уведомлений нет', 'info')"></i>
+                <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-white" onclick="toggleSearchModal()"></i>
                 <span class="cursor-pointer hover:text-white"><i class="fa-solid fa-globe"></i> Russian</span>
             </div>
         </div>
     </header>
 
-    <!-- СТРАНИЦА: ГЛАВНАЯ -->
+    <!-- СТРАНИЦА 1: ГЛАВНАЯ -->
     <main id="page-home" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow">
         <div class="bg-custom-dark rounded-lg p-8 border border-custom space-y-4">
-            <h1 class="text-2xl font-bold text-white">Добро пожаловать на REQUIEM.FUN</h1>
-            <p class="text-xs text-slate-300 leading-relaxed">Разработка приватного программного обеспечения для Counter-Strike 2. Полный обход VACnet, высокий уровень защиты аккаунта и регулярные обновления.</p>
-            <div class="pt-2">
+            <div class="inline-block bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[10px] font-bold px-2.5 py-1 rounded">
+                Counter-Strike 2 Software
+            </div>
+            <h1 class="text-2xl font-bold text-white">Приватный софт REQUIEM CS2</h1>
+            <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
+                Инновационный программный комплекс для CS2, разработанный с акцентом на скрытость от системы VACnet и сохранение высокого фактора доверия (Trust Factor). Минималистичный графический интерфейс, высокая производительность и постоянные обновления.
+            </p>
+            <div class="pt-2 flex gap-3">
                 <button onclick="switchPage('catalog')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-6 py-2.5 rounded transition">
-                    Перейти к товарам
+                    К списку товаров
+                </button>
+                <button onclick="switchPage('dash')" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-6 py-2.5 rounded transition">
+                    Панель управления
                 </button>
             </div>
         </div>
     </main>
 
-    <!-- СТРАНИЦА: ФОРУМ -->
+    <!-- СТРАНИЦА 2: ФОРУМ -->
     <main id="page-forum" class="max-w-6xl mx-auto w-full p-6 space-y-4 flex-grow hidden">
-        <h1 class="text-lg font-bold text-white uppercase tracking-wide">Сообщество и обсуждения</h1>
+        <h1 class="text-lg font-bold text-white uppercase tracking-wide">Форум сообщества</h1>
+        
         <div class="bg-custom-dark rounded-lg border border-custom divide-y divide-slate-700/50 text-xs">
-            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition">
+            <!-- Раздел 1 -->
+            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition cursor-pointer" onclick="showToast('Доступ к разделу только для клиентов', 'error')">
                 <div class="flex items-center space-x-3">
                     <i class="fa-regular fa-comments text-sky-400 text-base"></i>
                     <div>
-                        <a href="#" class="text-white font-semibold hover:underline">Новости и обновления</a>
-                        <p class="text-[11px] text-slate-400">Патчноуты, статусы детектов и анонсы</p>
+                        <div class="text-white font-semibold hover:underline">Новости и важные анонсы</div>
+                        <p class="text-[11px] text-slate-400">Патчноуты, статусы детектов софта и технические работы</p>
                     </div>
                 </div>
-                <span class="text-slate-400">142 темы</span>
+                <span class="text-slate-400">42 темы</span>
             </div>
-            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition">
+
+            <!-- Раздел 2 -->
+            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition cursor-pointer" onclick="showToast('Загрузка конфигов доступна', 'info')">
                 <div class="flex items-center space-x-3">
                     <i class="fa-solid fa-code text-rose-500 text-base"></i>
                     <div>
-                        <a href="#" class="text-white font-semibold hover:underline">Конфиги пользователей</a>
-                        <p class="text-[11px] text-slate-400">Делитесь и скачивайте готовые CFG для CS2</p>
+                        <div class="text-white font-semibold hover:underline">Игровые конфиги (CFG)</div>
+                        <p class="text-[11px] text-slate-400">Пользовательские настройки для Aimbot, Legit, Rage и Visuals</p>
                     </div>
                 </div>
-                <span class="text-slate-400">589 тем</span>
+                <span class="text-slate-400">318 тем</span>
+            </div>
+
+            <!-- Раздел 3 -->
+            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition cursor-pointer" onclick="showToast('Создайте тикет в панели для обращения', 'info')">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-headset text-emerald-400 text-base"></i>
+                    <div>
+                        <div class="text-white font-semibold hover:underline">Решение проблем / Поддержка</div>
+                        <p class="text-[11px] text-slate-400">Помощь по ошибкам лоадера, крашам и запуску софта</p>
+                    </div>
+                </div>
+                <span class="text-slate-400">129 тем</span>
             </div>
         </div>
     </main>
 
-    <!-- СТРАНИЦА 1 КАТАЛОГА: ВЫБОР ТОВАРА -->
+    <!-- СТРАНИЦА 3: ВЫБОР ТОВАРА (КАТАЛОГ) -->
     <main id="page-catalog" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
         <h1 class="text-lg font-bold text-white uppercase tracking-wide">Список приватных читов</h1>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             
-            <!-- Карточка товара (как на скриншоте MIDNIGHT) -->
+            <!-- Карточка CS2 -->
             <div onclick="openProduct('cs2')" class="bg-custom-dark rounded border border-custom overflow-hidden cursor-pointer hover:border-slate-500 transition group flex flex-col justify-between">
-                <div class="relative h-48 bg-slate-900 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:scale-105 transition duration-300" alt="CS2 Preview">
+                <div class="relative h-52 bg-slate-900 flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-t from-custom-dark to-transparent z-10"></div>
+                    <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-300" alt="CS2 Preview">
                     
-                    <span class="absolute top-2 right-2 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded">
-                        from <span class="text-white font-extrabold">349.00 RUB</span>
+                    <span class="absolute top-2 right-2 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded z-20">
+                        от <span class="text-white font-extrabold">349.00 RUB</span>
                     </span>
 
-                    <div class="text-center z-10">
+                    <div class="text-center z-20">
                         <h3 class="text-white font-black text-2xl tracking-tighter uppercase italic">COUNTER-STRIKE 2</h3>
                     </div>
 
-                    <span class="absolute bottom-2 left-2 bg-black/90 text-emerald-400 text-[11px] font-semibold px-2 py-0.5 rounded border border-emerald-500/30">
+                    <span class="absolute bottom-2 left-2 bg-black/90 text-emerald-400 text-[11px] font-semibold px-2 py-0.5 rounded border border-emerald-500/30 z-20">
                         undetected
                     </span>
                 </div>
@@ -138,22 +173,24 @@
         </div>
     </main>
 
-    <!-- СТРАНИЦА 2 КАТАЛОГА: СТРАНИЦА ПОКУПКИ ВЫБРАННОГО ТОВАРА -->
+    <!-- СТРАНИЦА 4: ПОКУПКА ВЫБРАННОГО ТОВАРА -->
     <main id="page-buy-item" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
         
         <div class="flex items-center space-x-2 text-xs text-slate-400">
-            <button onclick="switchPage('catalog')" class="hover:text-white"><i class="fa-solid fa-arrow-left"></i> Назад к списку читов</button>
+            <button onclick="switchPage('catalog')" class="hover:text-white flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Назад к каталогу
+            </button>
         </div>
 
-        <div class="bg-custom-dark border border-custom p-3 rounded text-xs text-rose-400 font-medium">
-            Не получается приобрести через платежный сервис? — <a href="#" class="underline hover:text-rose-300">Список селлеров</a>
+        <div class="bg-custom-dark border border-custom p-3 rounded text-xs text-rose-400 font-medium flex justify-between items-center">
+            <span>Не получается приобрести через платежный сервис? — <a href="#" onclick="showToast('Селлеры временно недоступны', 'error')" class="underline hover:text-rose-300">Список селлеров</a></span>
+            <span class="text-slate-400 text-[11px]">Автоматическая выдача ключа</span>
         </div>
 
-        <!-- Покупка товара -->
         <div class="bg-custom-dark rounded-lg p-5 border border-custom space-y-6">
             <h1 class="text-white font-semibold text-lg uppercase tracking-wide">REQUIEM CS2</h1>
 
-            <!-- Слайдер подписки -->
+            <!-- Слайдер выбора тарифа -->
             <div class="bg-custom-card p-6 rounded-lg border border-custom space-y-6">
                 <h2 class="text-xs uppercase font-bold text-sky-400 tracking-wider">Выберите длительность подписки</h2>
                 
@@ -172,57 +209,58 @@
                         <span class="text-xs text-slate-400 block">Сумма</span>
                         <span id="priceDisplay" class="text-2xl font-bold text-white">349.00 RUB</span>
                     </div>
-                    <button class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded font-medium text-sm flex items-center gap-2 transition shadow-lg">
+                    <button onclick="openPayModal()" class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded font-medium text-sm flex items-center gap-2 transition shadow-lg">
                         <i class="fa-solid fa-cart-shopping text-xs"></i> Купить
                     </button>
                 </div>
             </div>
 
-            <!-- Описание -->
+            <!-- Функционал чита -->
             <div class="space-y-4 text-xs leading-relaxed text-slate-300">
-                <h2 class="text-sm font-bold text-white">Приватный чит для Counter-Strike 2 (CS2)</h2>
-                <p><b>REQUIEM CS2</b> — разработан с акцентом на защиту от VAC и падения фактора доверия (trust factor). Стабильность, производительность и удобство использования.</p>
+                <h2 class="text-sm font-bold text-white">Приватный софт для Counter-Strike 2 (CS2)</h2>
+                <p><b>REQUIEM CS2</b> — адаптирован для максимальной скрытности, обхода VACnet и идеальной плавности при работе на любых сборках Windows.</p>
                 
-                <h3 class="font-bold text-white pt-2">Особенности чита на кс2:</h3>
+                <h3 class="font-bold text-white pt-2">Особенности и функционал:</h3>
                 <ul class="list-disc list-inside space-y-1 text-slate-400">
-                    <li><b class="text-slate-200">Aimbot</b> — функция позволяет доводить прицел до противников и контролировать отдачу.</li>
-                    <li><b class="text-slate-200">ESP, WH</b> — показывает местоположение игроков через всю карту.</li>
-                    <li><b class="text-slate-200">Chams</b> — выделяют модели игроков цветом.</li>
-                    <li><b class="text-slate-200">Skinganger</b> — изменяет внешний вид оружия, ножей, перчаток.</li>
-                    <li><b class="text-slate-200">BHOP</b> — автоматическая распрыжка.</li>
+                    <li><b class="text-slate-200">Aimbot</b> — наводка прицела, доводчик, компенсация отдачи (RCS).</li>
+                    <li><b class="text-slate-200">ESP / WH</b> — отрисовка скелетов, боксов, видимость сквозь стены.</li>
+                    <li><b class="text-slate-200">Chams</b> — заливка моделей игроков цветными текстурами.</li>
+                    <li><b class="text-slate-200">Skinchanger</b> — установка любых скинов, ножей и перчаток.</li>
+                    <li><b class="text-slate-200">Movement</b> — Auto-Bhop для авто-распрыжки.</li>
                 </ul>
             </div>
         </div>
     </main>
 
-    <!-- СТРАНИЦА: ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ -->
+    <!-- СТРАНИЦА 5: ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ -->
     <main id="page-dash" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
         <div class="flex justify-between items-center">
             <h1 class="text-xl font-bold text-white uppercase tracking-wide">Подписки</h1>
             <div class="flex space-x-3 text-xs">
-                <button class="bg-rose-600 hover:bg-rose-500 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
+                <button onclick="downloadLoader()" class="bg-rose-600 hover:bg-rose-500 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
                     <i class="fa-solid fa-download"></i> Скачать лоадер
                 </button>
-                <button class="bg-rose-700 hover:bg-rose-600 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
+                <button onclick="openHWIDModal()" class="bg-rose-700 hover:bg-rose-600 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
                     <i class="fa-solid fa-arrows-rotate"></i> Сбросить привязку
                 </button>
-                <button class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
+                <button onclick="openKeyModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
                     <i class="fa-solid fa-key"></i> Активировать ключ
                 </button>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Левый сайдбар -->
             <div class="space-y-4">
                 <div class="bg-custom-dark rounded border border-custom overflow-hidden">
                     <div class="bg-custom-sidebar px-4 py-2 text-xs font-bold text-sky-400 uppercase tracking-wider">
                         Панель пользователя
                     </div>
                     <div class="flex flex-col text-xs font-medium">
-                        <a href="#" class="px-4 py-2.5 bg-slate-700/40 text-sky-400 border-l-2 border-sky-400">Подписки</a>
-                        <a href="#" class="px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Поддержка</a>
-                        <a href="#" class="px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Реферальная система</a>
-                        <a href="#" class="px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Скачать лоадер</a>
+                        <button onclick="switchDashTab('subs')" id="dash-tab-subs" class="text-left px-4 py-2.5 bg-slate-700/40 text-sky-400 border-l-2 border-sky-400">Подписки</button>
+                        <button onclick="switchDashTab('support')" id="dash-tab-support" class="text-left px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Поддержка</button>
+                        <button onclick="switchDashTab('ref')" id="dash-tab-ref" class="text-left px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Реферальная система</button>
+                        <button onclick="downloadLoader()" class="text-left px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Скачать лоадер</button>
                     </div>
                 </div>
 
@@ -231,56 +269,110 @@
                         Ваша учетная запись
                     </div>
                     <div class="flex flex-col text-xs font-medium">
-                        <a href="#" class="px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Дискорд аккаунт</a>
-                        <a href="#" class="px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Пароль и безопасность</a>
+                        <button onclick="showToast('Discord профиль привязан', 'info')" class="text-left px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Дискорд аккаунт</button>
+                        <button onclick="showToast('Функция смены пароля отправлена на почту', 'info')" class="text-left px-4 py-2.5 hover:bg-slate-700/20 hover:text-white transition">Пароль и безопасность</button>
                     </div>
                 </div>
             </div>
 
+            <!-- Правый блок подписок -->
             <div class="md:col-span-3 space-y-3">
-                <div class="bg-custom-dark border border-custom rounded-lg p-4 flex justify-between items-center">
+                <div id="sub-card" class="bg-custom-dark border border-custom rounded-lg p-4 flex justify-between items-center">
                     <div class="flex items-center space-x-4">
-                        <div class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400">
+                        <div id="sub-icon" class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400">
                             <i class="fa-solid fa-check text-sm"></i>
                         </div>
                         <div>
                             <div class="text-sm font-bold text-white">REQUIEM CS2</div>
-                            <div class="text-xs text-slate-400">Дней: <span class="text-emerald-400 font-semibold">20</span></div>
+                            <div class="text-xs text-slate-400">Статус: <span id="sub-status-text" class="text-emerald-400 font-semibold">Активна (20 дней)</span></div>
                         </div>
                     </div>
-                    <button class="bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs px-4 py-2 rounded flex items-center gap-2 transition">
-                        <i class="fa-solid fa-power-off"></i> Разморозить
+                    <button id="freeze-btn" onclick="toggleFreeze()" class="bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs px-4 py-2 rounded flex items-center gap-2 transition">
+                        <i class="fa-solid fa-snowflake"></i> Заморозить
                     </button>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- МОДАЛЬНОЕ ОКНО 1: ОПЛАТА -->
+    <div id="modal-pay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-5 relative">
+            <button onclick="closeModal('modal-pay')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-white">Выберите способ оплаты</h3>
+            <div class="space-y-2 text-xs">
+                <button onclick="processPay('Банковские карты RU')" class="w-full bg-custom-card hover:bg-slate-700 border border-custom p-3 rounded flex items-center justify-between transition text-white">
+                    <span><i class="fa-solid fa-credit-card text-rose-500 mr-2"></i> Банковская карта (Мир, Visa, MC)</span>
+                    <i class="fa-solid fa-chevron-right text-slate-500"></i>
+                </button>
+                <button onclick="processPay('СБП')" class="w-full bg-custom-card hover:bg-slate-700 border border-custom p-3 rounded flex items-center justify-between transition text-white">
+                    <span><i class="fa-solid fa-qrcode text-sky-400 mr-2"></i> Система Быстрых Платежей (СБП)</span>
+                    <i class="fa-solid fa-chevron-right text-slate-500"></i>
+                </button>
+                <button onclick="processPay('Криптовалюта')" class="w-full bg-custom-card hover:bg-slate-700 border border-custom p-3 rounded flex items-center justify-between transition text-white">
+                    <span><i class="fa-solid fa-coins text-amber-400 mr-2"></i> Crypto (USDT, BTC, LTC)</span>
+                    <i class="fa-solid fa-chevron-right text-slate-500"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО 2: СБРОС HWID -->
+    <div id="modal-hwid" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-4 relative">
+            <button onclick="closeModal('modal-hwid')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-white">Сброс привязки HWID</h3>
+            <p class="text-xs text-slate-300">Укажите причину сброса привязки (например: замена видеокарты или переустановка Windows):</p>
+            <textarea id="hwid-reason" class="w-full bg-custom-card border border-custom rounded p-3 text-xs text-white focus:outline-none focus:border-sky-400 h-24" placeholder="Введите причину..."></textarea>
+            <button onclick="submitHWID()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded text-xs transition">
+                Отправить запрос
+            </button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО 3: АКТИВАЦИЯ КЛЮЧА -->
+    <div id="modal-key" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-4 relative">
+            <button onclick="closeModal('modal-key')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-white">Активация лицензионного ключа</h3>
+            <input type="text" id="key-input" placeholder="XXXX-XXXX-XXXX-XXXX" class="w-full bg-custom-card border border-custom rounded p-3 text-xs text-white focus:outline-none focus:border-sky-400 uppercase tracking-widest text-center">
+            <button onclick="submitKey()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded text-xs transition">
+                Активировать
+            </button>
+        </div>
+    </div>
+
     <!-- ФУТЕР -->
     <footer class="bg-custom-dark border-t border-custom text-xs py-4 px-6 mt-12">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500">
             <div class="flex space-x-4">
-                <a href="#" class="hover:text-slate-300">Обратная связь</a>
-                <a href="#" class="hover:text-slate-300">Условия и правила</a>
-                <a href="#" class="hover:text-slate-300">Политика конфиденциальности</a>
-                <a href="#" class="hover:text-slate-300">Контакты</a>
+                <a href="#" onclick="showToast('Поддержка: support@requiem.fun', 'info')" class="hover:text-slate-300">Обратная связь</a>
+                <a href="#" onclick="showToast('Условия использования обновлены', 'info')" class="hover:text-slate-300">Условия и правила</a>
+                <a href="#" onclick="showToast('Политика соблюдается', 'info')" class="hover:text-slate-300">Политика конфиденциальности</a>
             </div>
             <div>© 2026 REQUIEM.FUN — All rights reserved.</div>
         </div>
     </footer>
 
-    <!-- JS СКРИПТ ПЕРЕКЛЮЧЕНИЯ СТРАНИЦ -->
+    <!-- JS СКРИПТЫ -->
     <script>
+        // Данные о тарифах
         const prices = ["199.00 RUB", "349.00 RUB", "890.00 RUB", "1490.00 RUB"];
+        let isFrozen = false;
 
+        // Обновление цены слайдером
         function updatePrice() {
             const slider = document.getElementById('daysSlider');
             document.getElementById('priceDisplay').innerText = prices[slider.value];
         }
 
+        // Переключение страниц сайта
         function switchPage(pageId) {
             const pages = ['home', 'forum', 'catalog', 'buy-item', 'dash'];
-            pages.forEach(p => document.getElementById('page-' + p).classList.add('hidden'));
+            pages.forEach(p => {
+                const el = document.getElementById('page-' + p);
+                if (el) el.classList.add('hidden');
+            });
 
             const navs = ['home', 'forum', 'buy', 'dash'];
             navs.forEach(n => {
@@ -291,8 +383,7 @@
             document.getElementById('page-' + pageId).classList.remove('hidden');
 
             let activeNav = pageId;
-            if (pageId === 'buy-item') activeNav = 'buy';
-            if (pageId === 'catalog') activeNav = 'buy';
+            if (pageId === 'buy-item' || pageId === 'catalog') activeNav = 'buy';
 
             const activeEl = document.getElementById('nav-' + activeNav);
             if (activeEl) activeEl.classList.add('active');
@@ -300,6 +391,85 @@
 
         function openProduct(id) {
             switchPage('buy-item');
+        }
+
+        // Заморозка подписки
+        function toggleFreeze() {
+            const statusText = document.getElementById('sub-status-text');
+            const btn = document.getElementById('freeze-btn');
+            const icon = document.getElementById('sub-icon');
+
+            if (!isFrozen) {
+                isFrozen = true;
+                statusText.innerText = "Заморожена";
+                statusText.className = "text-sky-400 font-semibold";
+                btn.innerHTML = '<i class="fa-solid fa-fire"></i> Разморозить';
+                icon.className = "w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500 flex items-center justify-center text-sky-400";
+                showToast('Подписка успешно заморожена', 'info');
+            } else {
+                isFrozen = false;
+                statusText.innerText = "Активна (20 дней)";
+                statusText.className = "text-emerald-400 font-semibold";
+                btn.innerHTML = '<i class="fa-solid fa-snowflake"></i> Заморозить';
+                icon.className = "w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400";
+                showToast('Подписка разморожена', 'success');
+            }
+        }
+
+        // Модальные окна
+        function openPayModal() { document.getElementById('modal-pay').classList.remove('hidden'); }
+        function openHWIDModal() { document.getElementById('modal-hwid').classList.remove('hidden'); }
+        function openKeyModal() { document.getElementById('modal-key').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function processPay(method) {
+            closeModal('modal-pay');
+            showToast(`Перенаправление на шлюз ${method}...`, 'info');
+        }
+
+        function submitHWID() {
+            const reason = document.getElementById('hwid-reason').value;
+            if(!reason) {
+                showToast('Укажите причину сброса', 'error');
+                return;
+            }
+            closeModal('modal-hwid');
+            document.getElementById('hwid-reason').value = '';
+            showToast('Заявка на сброс HWID успешно отправлена', 'success');
+        }
+
+        function submitKey() {
+            const key = document.getElementById('key-input').value;
+            if(!key || key.length < 5) {
+                showToast('Неверный формат ключа', 'error');
+                return;
+            }
+            closeModal('modal-key');
+            document.getElementById('key-input').value = '';
+            showToast('Ключ успешно активирован (+30 дней)', 'success');
+        }
+
+        function downloadLoader() {
+            showToast('Загрузка RequiemLoader.exe началась...', 'success');
+        }
+
+        // Система всплывающих уведомлений (Toast)
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-custom-card border-sky-500 text-sky-300';
+            if (type === 'success') bg = 'bg-custom-card border-emerald-500 text-emerald-300';
+            if (type === 'error') bg = 'bg-custom-card border-rose-500 text-rose-300';
+
+            toast.className = `p-3 rounded border text-xs shadow-xl flex items-center gap-2 ${bg} toast-animate pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
         }
     </script>
 </body>
