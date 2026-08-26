@@ -51,7 +51,7 @@
         </section>
     </main>
 
-    <!-- ФОРУМ -->
+    <!-- ФОРУМ (СПИСОК ТЕМ) -->
     <main id="tab-forum" class="tab-content">
         <div class="wrap page-padding">
             <div class="bar">
@@ -66,7 +66,33 @@
         </div>
     </main>
 
-    <!-- ПРОФИЛЬ (MTA PROVINCE / IPS STYLE) -->
+    <!-- ПРОСМОТР ОТДЕЛЬНОЙ ТЕМЫ -->
+    <main id="tab-topic-view" class="tab-content">
+        <div class="wrap page-padding">
+            <button class="btn btn-outline btn-sm" onclick="switchTab('forum')" style="margin-bottom: 20px;">
+                <i class="fas fa-arrow-left"></i> Назад к форуму
+            </button>
+            
+            <div class="topic-header-box">
+                <h2 id="viewTopicTitle">Загрузка темы...</h2>
+                <div class="topic-meta-info" id="viewTopicMeta"></div>
+            </div>
+
+            <!-- Сообщения темы -->
+            <div class="replies-list" id="topicRepliesContainer"></div>
+
+            <!-- Форма ответа -->
+            <div class="reply-form-card">
+                <h3>Оставить ответ</h3>
+                <div class="form-group">
+                    <textarea id="newReplyText" rows="4" placeholder="Напишите ваш ответ..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="submitReply()"><i class="fas fa-paper-plane"></i> Отправить ответ</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ПРОФИЛЬ -->
     <main id="tab-profile" class="tab-content">
         <div class="wrap page-padding">
             
@@ -81,10 +107,10 @@
                     </div>
                     <div class="user-details">
                         <h2 id="profUsername">-812</h2>
-                        <span class="user-group" id="profGroup">Пользователь</span>
+                        <span id="profGroup"></span>
                     </div>
                     <div class="profile-stats">
-                        <div class="stat-item"><span class="lbl">ПОСТОВ</span><strong id="profPosts">6</strong></div>
+                        <div class="stat-item"><span class="lbl">ПОСТОВ</span><strong id="profPosts">0</strong></div>
                         <div class="stat-item"><span class="lbl">ЗАРЕГИСТРИРОВАН</span><strong id="profReg">2 августа</strong></div>
                         <div class="stat-item"><span class="lbl">ПОСЕЩЕНИЕ</span><strong>Только что</strong></div>
                     </div>
@@ -116,23 +142,9 @@
                         </div>
                         <p class="empty-text">Подписчиков нет</p>
                     </div>
-
-                    <div class="side-block">
-                        <div class="side-block-header">
-                            <span>Информация о персонаже</span>
-                        </div>
-                        <div class="char-info-row">
-                            <span class="char-lbl">Игровой ник</span>
-                            <span class="char-val" id="profGameNick">Rom_Roysfield</span>
-                        </div>
-                        <div class="char-info-row">
-                            <span class="char-lbl">Город проживания</span>
-                            <span class="char-val" id="profCity">Приазовье</span>
-                        </div>
-                    </div>
                 </aside>
 
-                <!-- Лента -->
+                <!-- Лента активности -->
                 <section class="profile-feed">
                     <div class="feed-header">
                         <h3>Недавняя активность</h3>
@@ -171,14 +183,14 @@
                 </div>
 
                 <div class="card">
-                    <h3>Управление пользователями</h3>
+                    <h3>Управление пользователями и ролями</h3>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>Логин</th>
-                                    <th>Роль</th>
-                                    <th>Действие</th>
+                                    <th>Текущая роль</th>
+                                    <th>Сменить роль</th>
                                 </tr>
                             </thead>
                             <tbody id="adminUsersTable"></tbody>
@@ -227,7 +239,7 @@
                     <input type="text" id="topicTitle" placeholder="Введите название...">
                 </div>
                 <div class="form-group">
-                    <label>Сообщение</label>
+                    <label>Первое сообщение</label>
                     <textarea id="topicBody" rows="4" placeholder="Текст сообщения..."></textarea>
                 </div>
                 <button class="btn btn-primary btn-block" onclick="createTopic()">Опубликовать</button>
@@ -245,10 +257,6 @@
                 <div class="form-group">
                     <label>Логин</label>
                     <input type="text" id="authLogin" placeholder="Логин">
-                </div>
-                <div class="form-group">
-                    <label>Игровой ник</label>
-                    <input type="text" id="authGameNick" placeholder="Rom_Roysfield">
                 </div>
                 <button class="btn btn-primary btn-block" onclick="handleAuth()" id="authSubmitBtn">Войти</button>
             </div>
