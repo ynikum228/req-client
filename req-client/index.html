@@ -81,14 +81,8 @@
             <!-- Сообщения темы -->
             <div class="replies-list" id="topicRepliesContainer"></div>
 
-            <!-- Форма ответа -->
-            <div class="reply-form-card">
-                <h3>Оставить ответ</h3>
-                <div class="form-group">
-                    <textarea id="newReplyText" rows="4" placeholder="Напишите ваш ответ..."></textarea>
-                </div>
-                <button class="btn btn-primary" onclick="submitReply()"><i class="fas fa-paper-plane"></i> Отправить ответ</button>
-            </div>
+            <!-- Форма ответа / Блок бана -->
+            <div class="reply-form-card" id="replyFormContainer"></div>
         </div>
     </main>
 
@@ -131,7 +125,7 @@
                         <div class="warn-circle"><span id="profWarns">0</span></div>
                         <div class="warn-info">
                             <strong>баллов предупреждений</strong>
-                            <p>Никакие ограничения не применены</p>
+                            <p>Система ограничений аккаунта</p>
                         </div>
                     </div>
 
@@ -159,15 +153,53 @@
     <main id="tab-admin" class="tab-content">
         <div class="wrap page-padding">
             <div class="admin-notice">
-                <i class="fas fa-unlock"></i>
+                <i class="fas fa-shield-halved"></i>
                 <div>
-                    <strong>Временный режим:</strong> Доступ открыт для публичного тестирования.
+                    <strong>Панель модерации:</strong> Управление ролями, жалобами и предупреждениями.
                 </div>
             </div>
 
-            <div class="admin-grid">
+            <div class="admin-grid" style="grid-template-columns: 1fr; gap:25px;">
+                <!-- Жалобы -->
                 <div class="card">
-                    <h3>Подписки и заказы (150 ₽/мес)</h3>
+                    <h3>Поступившие жалобы</h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Отправитель</th>
+                                    <th>На кого</th>
+                                    <th>Причина</th>
+                                    <th>Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminReportsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Пользователи и баллы -->
+                <div class="card">
+                    <h3>Управление пользователями, ролями и баллами</h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Логин</th>
+                                    <th>Роль</th>
+                                    <th>Баллы</th>
+                                    <th>Сменить роль</th>
+                                    <th>Наказать</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Подписки -->
+                <div class="card">
+                    <h3>Заказы подписок</h3>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
@@ -178,22 +210,6 @@
                                 </tr>
                             </thead>
                             <tbody id="adminOrdersTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3>Управление пользователями и ролями</h3>
-                    <div class="table-responsive">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Логин</th>
-                                    <th>Текущая роль</th>
-                                    <th>Сменить роль</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminUsersTable"></tbody>
                         </table>
                     </div>
                 </div>
