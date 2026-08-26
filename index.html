@@ -40,7 +40,6 @@
       border: 1px solid rgba(234, 88, 12, 0.5);
     }
 
-    /* Стильный слайдер в стиле Midnight */
     input[type=range] {
       -webkit-appearance: none;
       width: 100%;
@@ -76,7 +75,6 @@
   </style>
 </head>
 <body class="bg-[#08080a] text-gray-200 antialiased selection:bg-orange-500/30 selection:text-orange-200 min-h-screen relative">
-  <!-- Бэкграунд свечение -->
   <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-orange-600/10 blur-[140px] pointer-events-none rounded-full"></div>
 
   <div id="root"></div>
@@ -176,9 +174,8 @@
       );
     }
 
-    // Вкладка покупки с обновленными тарифами
     function BuyTab() {
-      const [daysIndex, setDaysIndex] = useState(1); // 1 = 30 дней по умолчанию
+      const [daysIndex, setDaysIndex] = useState(1);
       const plans = [
         { days: '14 Дней', price: 150, label: 'Тест', badge: '' },
         { days: '30 Дней', price: 300, label: 'Стандарт', badge: 'ПОПУЛЯРНЫЙ' },
@@ -202,7 +199,6 @@
           <div className="glass-card rounded-3xl p-8 sm:p-10 space-y-10 border border-white/10 glow-orange relative overflow-hidden">
             <div className="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-            {/* Слайдер дней (Midnight Style) */}
             <div className="space-y-6">
               <div className="flex justify-between items-end">
                 <div>
@@ -216,7 +212,6 @@
                 )}
               </div>
 
-              {/* Сам ползунок на 5 позиций */}
               <div className="space-y-3">
                 <input 
                   type="range" 
@@ -241,7 +236,6 @@
               </div>
             </div>
 
-            {/* Выбор карточек */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {plans.map((p, idx) => (
                 <div 
@@ -264,7 +258,6 @@
               ))}
             </div>
 
-            {/* Итоговая сумма и кнопка */}
             <div className="pt-8 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-6">
               <div>
                 <span className="text-xs text-gray-400 block font-bold">Итоговая стоимость</span>
@@ -282,7 +275,6 @@
       );
     }
 
-    // Модалка авторизации
     function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       const [isRegister, setIsRegister] = useState(false);
       const [username, setUsername] = useState('');
@@ -297,52 +289,57 @@
         setError('');
         setLoading(true);
 
-        const fakeEmail = `${username.toLowerCase().trim()}@requiem.local`;
+        const fakeEmail = `${username.toLowerCase().trim()}@gmail.com`;
 
-        if (isRegister) {
-          const { data: authData, error: authErr } = await supabaseClient.auth.signUp({
-            email: fakeEmail,
-            password: password,
-          });
+        try {
+          if (isRegister) {
+            const { data: authData, error: authErr } = await supabaseClient.auth.signUp({
+              email: fakeEmail,
+              password: password,
+            });
 
-          if (authErr) {
-            setError(authErr.message);
-            setLoading(false);
-            return;
-          }
+            if (authErr) {
+              setError(authErr.message);
+              setLoading(false);
+              return;
+            }
 
-          if (authData.user) {
-            const isOwner = username.toLowerCase() === 'morphezy';
-            await supabaseClient.from('profiles').insert([{
-              id: authData.user.id,
-              username: username.trim(),
-              role: isOwner ? 'owner' : 'user'
-            }]);
-            
-            onLoginSuccess({ id: authData.user.id, username, role: isOwner ? 'owner' : 'user' });
+            if (authData.user) {
+              const isOwner = username.toLowerCase() === 'morphezy' || username.toLowerCase() === 'morpheus';
+              await supabaseClient.from('profiles').insert([{
+                id: authData.user.id,
+                username: username.trim(),
+                role: isOwner ? 'owner' : 'user'
+              }]);
+              
+              onLoginSuccess({ id: authData.user.id, username, role: isOwner ? 'owner' : 'user' });
+              onClose();
+            }
+          } else {
+            const { data: authData, error: authErr } = await supabaseClient.auth.signInWithPassword({
+              email: fakeEmail,
+              password: password,
+            });
+
+            if (authErr) {
+              setError('Неверный логин или пароль');
+              setLoading(false);
+              return;
+            }
+
+            const { data: profile } = await supabaseClient
+              .from('profiles')
+              .select('*')
+              .eq('id', authData.user.id)
+              .single();
+
+            onLoginSuccess(profile || { id: authData.user.id, username, role: 'user' });
             onClose();
           }
-        } else {
-          const { data: authData, error: authErr } = await supabaseClient.auth.signInWithPassword({
-            email: fakeEmail,
-            password: password,
-          });
-
-          if (authErr) {
-            setError('Неверный логин или пароль');
-            setLoading(false);
-            return;
-          }
-
-          const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', authData.user.id)
-            .single();
-
-          onLoginSuccess(profile || { id: authData.user.id, username, role: 'user' });
-          onClose();
+        } catch (err) {
+          setError('Ошибка подключения к серверу. Отключите VPN/AdBlock или раздайте мобильный интернет.');
         }
+
         setLoading(false);
       };
 
@@ -397,7 +394,6 @@
       );
     }
 
-    // Активация ключей
     function ActivateKeyTab({ user, onUpdateUser }) {
       const [keyInput, setKeyInput] = useState('');
       const [status, setStatus] = useState({ type: '', msg: '' });
@@ -410,44 +406,48 @@
 
         const cleanKey = keyInput.trim();
 
-        const { data: keyData, error: keyErr } = await supabaseClient
-          .from('license_keys')
-          .select('*')
-          .eq('key_code', cleanKey)
-          .single();
+        try {
+          const { data: keyData, error: keyErr } = await supabaseClient
+            .from('license_keys')
+            .select('*')
+            .eq('key_code', cleanKey)
+            .single();
 
-        if (keyErr || !keyData) {
-          setStatus({ type: 'error', msg: 'Указанный ключ не существует или был введен с ошибкой!' });
-          setLoading(false);
-          return;
+          if (keyErr || !keyData) {
+            setStatus({ type: 'error', msg: 'Указанный ключ не существует или был введен с ошибкой!' });
+            setLoading(false);
+            return;
+          }
+
+          if (keyData.is_used) {
+            setStatus({ type: 'error', msg: 'Этот ключ уже активирован!' });
+            setLoading(false);
+            return;
+          }
+
+          let subUntil = new Date();
+          if (keyData.duration_days === -1) {
+            subUntil.setFullYear(subUntil.getFullYear() + 100);
+          } else {
+            subUntil.setDate(subUntil.getDate() + keyData.duration_days);
+          }
+
+          await supabaseClient
+            .from('license_keys')
+            .update({ is_used: true, used_by: user.id })
+            .eq('id', keyData.id);
+
+          await supabaseClient
+            .from('profiles')
+            .update({ subscription_until: subUntil.toISOString() })
+            .eq('id', user.id);
+
+          setStatus({ type: 'success', msg: 'Успех! Подписка успешно активирована на вашем аккаунте.' });
+          setKeyInput('');
+          onUpdateUser();
+        } catch (err) {
+          setStatus({ type: 'error', msg: 'Ошибка при активации ключа.' });
         }
-
-        if (keyData.is_used) {
-          setStatus({ type: 'error', msg: 'Этот ключ уже активирован!' });
-          setLoading(false);
-          return;
-        }
-
-        let subUntil = new Date();
-        if (keyData.duration_days === -1) {
-          subUntil.setFullYear(subUntil.getFullYear() + 100);
-        } else {
-          subUntil.setDate(subUntil.getDate() + keyData.duration_days);
-        }
-
-        await supabaseClient
-          .from('license_keys')
-          .update({ is_used: true, used_by: user.id })
-          .eq('id', keyData.id);
-
-        await supabaseClient
-          .from('profiles')
-          .update({ subscription_until: subUntil.toISOString() })
-          .eq('id', user.id);
-
-        setStatus({ type: 'success', msg: 'Успех! Подписка успешно активирована на вашем аккаунте.' });
-        setKeyInput('');
-        onUpdateUser();
         setLoading(false);
       };
 
@@ -485,7 +485,6 @@
       );
     }
 
-    // Генерация ключей (Owner/Admin)
     function KeygenTab() {
       const [generatedKeys, setGeneratedKeys] = useState([]);
       const [keyDuration, setKeyDuration] = useState('lifetime');
@@ -595,7 +594,6 @@
       );
     }
 
-    // Профиль
     function ProfileTab({ user }) {
       return (
         <div className="space-y-6 max-w-3xl mx-auto py-6">
