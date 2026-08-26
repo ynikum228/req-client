@@ -1,4 +1,5 @@
 let currentTopicId = null;
+let selectedPlan = { days: 30, price: 299, name: '30 Дней' };
 
 const ROLES = {
     user: { title: 'Пользователь', class: 'role-user' },
@@ -23,16 +24,16 @@ const defaultState = {
         avatar: 'https://i.imgur.com/8Km9tLL.png',
         cover: '',
         warns: 0,
-        banUntil: null
+        banUntil: null,
+        sub: { active: true, plan: 'Life Time', expire: 'Навсегда' }
     },
     orders: [
-        { id: 101, email: 'user@example.com', status: 'Оплачено (150 ₽)' }
+        { id: 101, email: 'user@example.com', plan: '30 Дней (299 ₽)', status: 'Оплачено' }
     ],
     users: [
-        { login: 'requiem', role: 'dev', rep: 21, warns: 0, banUntil: null },
-        { login: '-812', role: 'admin', rep: 12, warns: 0, banUntil: null },
-        { login: 'Tester_John', role: 'tester', rep: 5, warns: 0, banUntil: null },
-        { login: 'Support_Alex', role: 'support', rep: 14, warns: 0, banUntil: null }
+        { login: 'requiem', role: 'dev', rep: 21, warns: 0, banUntil: null, sub: { active: true, plan: 'Life Time', expire: 'Навсегда' } },
+        { login: '-812', role: 'admin', rep: 12, warns: 0, banUntil: null, sub: { active: false, plan: '-', expire: '-' } },
+        { login: 'Tester_John', role: 'tester', rep: 5, warns: 0, banUntil: null, sub: { active: false, plan: '-', expire: '-' } }
     ],
     topics: [
         { 
@@ -40,18 +41,18 @@ const defaultState = {
             title: 'Тестовая тема форума', 
             author: 'requiem', 
             posts: [
-                { id: 1001, author: 'requiem', text: 'Добро пожаловать в обновленный форум REQ-Client!', date: 'Только что', likes: [] }
+                { id: 1001, author: 'requiem', text: 'Добро пожаловать в REQ-Client!', date: 'Только что', likes: [] }
             ]
         }
     ],
     reports: []
 };
 
-// Принудительный сброс старой структуры данных для применения исправлений
+// Версионирование базы
 (function checkVersion() {
-    if (localStorage.getItem('req_v3') !== 'true') {
+    if (localStorage.getItem('req_v4') !== 'true') {
         localStorage.removeItem('req_state');
-        localStorage.setItem('req_v3', 'true');
+        localStorage.setItem('req_v4', 'true');
     }
 })();
 
@@ -77,16 +78,19 @@ function switchTab(tabName) {
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function openPaymentModal() { openModal('payModal'); }
 
-// Расчет временных банов и постоянного закрытия форума
+function openPaymentModal(days, price, name) { 
+    selectedPlan = { days, price, name };
+    document.getElementById('payPlanName').textContent = name;
+    document.getElementById('payPlanPrice').textContent = price;
+    openModal('payModal'); 
+}
+
 function checkBanStatus(user) {
     if (!user) return { isBanned: false };
     const warns = user.warns || 0;
 
-    if (warns >= 80) {
-        return { isBanned: true, isPermanent: true, reason: 'Форум закрыт навсегда (80+ баллов)' };
-    }
+    if (warns >= 80) return { isBanned: true, isPermanent: true };
 
     if (user.banUntil && user.banUntil !== 'PERMANENT' && new Date(user.banUntil) > new Date()) {
         const daysLeft = Math.ceil((new Date(user.banUntil) - new Date()) / (1000 * 60 * 60 * 24));
@@ -96,7 +100,6 @@ function checkBanStatus(user) {
     return { isBanned: false };
 }
 
-// Открытие темы
 function openTopic(id) {
     currentTopicId = Number(id);
     switchTab('topic-view');
@@ -145,16 +148,12 @@ function renderTopicView() {
         `;
     }).join('');
 
-    // Вывод формы ответа или уведомления об ограничении
     const replyCard = document.getElementById('replyFormContainer');
     if (replyCard) {
         if (banInfo.isBanned) {
-            replyCard.innerHTML = `
-                <div style="color:#ff4d4d; font-weight:700; text-align:center; padding:20px; border:1px solid rgba(255,77,77,0.3); border-radius:10px; background:rgba(255,77,77,0.05);">
-                    <i class="fas fa-ban" style="font-size:24px; margin-bottom:10px; display:block;"></i>
-                    Доступ к написанию сообщений ограничен! <br>
-                    ${banInfo.isPermanent ? 'Доступ закрыт навсегда (80+ баллов).' : `Срок блокировки: ещё ${banInfo.daysLeft} дн.`}
-                </div>`;
+            replyCard.innerHTML = `<div style="color:#ff4d4d; font-weight:700; text-align:center; padding:15px; border:1px solid #ff4d4d; border-radius:10px;">
+                Вам запрещено писать на форуме! ${banInfo.isPermanent ? 'Доступ закрыт навсегда.' : `Осталось дней блокировки: ${banInfo.daysLeft}`}
+            </div>`;
         } else {
             replyCard.innerHTML = `
                 <h3>Оставить ответ</h3>
@@ -167,7 +166,6 @@ function renderTopicView() {
     }
 }
 
-// Защищенный лайк (1 лайк от 1 юзера)
 function toggleLikePost(topicId, postId) {
     const state = getState();
     if (!state.currentUser) return alert('Авторизуйтесь!');
@@ -196,7 +194,6 @@ function toggleLikePost(topicId, postId) {
     renderTopicView();
 }
 
-// Отправка ответа
 function submitReply() {
     const state = getState();
     const user = state.currentUser;
@@ -225,7 +222,6 @@ function submitReply() {
     }
 }
 
-// Жалобы
 function reportPost(targetAuthor, previewText) {
     const state = getState();
     if (!state.currentUser) return alert('Авторизуйтесь!');
@@ -241,28 +237,31 @@ function reportPost(targetAuthor, previewText) {
             date: 'Только что'
         });
         saveState(state);
-        alert('Жалоба передана модераторам!');
+        alert('Жалоба перенаправлена в специальный раздел модерации!');
     }
 }
 
-// Выдача баллов и установка банов в Админке
-function addWarnPoints(username, points) {
+// Выдача и СНЯТИЕ (Амнистия) баллов
+function modifyWarnPoints(username, points) {
     const state = getState();
     const u = state.users.find(x => x.login === username);
     if (!u) return;
 
-    u.warns = (u.warns || 0) + points;
+    u.warns = Math.max(0, (u.warns || 0) + points);
 
-    if (u.warns >= 80) {
+    // Сброс или установка банов
+    if (u.warns === 0) {
+        u.banUntil = null;
+    } else if (u.warns >= 80) {
         u.banUntil = 'PERMANENT';
     } else if (u.warns >= 30) {
-        let date = new Date();
-        date.setDate(date.getDate() + 30);
+        let date = new Date(); date.setDate(date.getDate() + 30);
         u.banUntil = date.toISOString();
     } else if (u.warns >= 10) {
-        let date = new Date();
-        date.setDate(date.getDate() + 7);
+        let date = new Date(); date.setDate(date.getDate() + 7);
         u.banUntil = date.toISOString();
+    } else {
+        u.banUntil = null;
     }
 
     if (state.currentUser && state.currentUser.login === username) {
@@ -271,7 +270,6 @@ function addWarnPoints(username, points) {
     }
 
     saveState(state);
-    alert(`Пользователю ${username} добавлено +${points} баллов! Всего: ${u.warns}`);
 }
 
 function dismissReport(id) {
@@ -280,7 +278,6 @@ function dismissReport(id) {
     saveState(state);
 }
 
-// Создание тем
 function createTopic() {
     const state = getState();
     const banInfo = checkBanStatus(state.currentUser);
@@ -347,7 +344,7 @@ function handleAuth() {
     let userObj = state.users.find(u => u.login.toLowerCase() === login.toLowerCase());
     
     if (!userObj) {
-        userObj = { login: login, role: 'user', rep: 0, warns: 0, banUntil: null };
+        userObj = { login: login, role: 'user', rep: 0, warns: 0, banUntil: null, sub: { active: false, plan: '-', expire: '-' } };
         state.users.push(userObj);
     }
 
@@ -359,7 +356,8 @@ function handleAuth() {
         regDate: 'Сегодня',
         avatar: 'https://i.imgur.com/8Km9tLL.png',
         warns: userObj.warns || 0,
-        banUntil: userObj.banUntil || null
+        banUntil: userObj.banUntil || null,
+        sub: userObj.sub || { active: false, plan: '-', expire: '-' }
     };
 
     saveState(state);
@@ -390,25 +388,46 @@ function changeUserRole(login, newRole) {
     }
 }
 
+// Оплата и привязка подписки к аккаунту
 function processPayment() {
     const email = document.getElementById('payEmail').value;
     if (!email) return alert('Введите ваш Email!');
 
     const state = getState();
+    
+    // Вычисление даты подписки
+    let expireText = 'Навсегда';
+    if (selectedPlan.days !== 99999) {
+        let d = new Date();
+        d.setDate(d.getDate() + selectedPlan.days);
+        expireText = d.toLocaleDateString('ru-RU');
+    }
+
+    if (state.currentUser) {
+        state.currentUser.sub = {
+            active: true,
+            plan: selectedPlan.name,
+            expire: expireText
+        };
+        const u = state.users.find(x => x.login === state.currentUser.login);
+        if (u) u.sub = state.currentUser.sub;
+    }
+
     state.orders.push({
         id: Math.floor(100 + Math.random() * 900),
         email: email,
-        status: 'Оплачено (150 ₽)'
+        plan: `${selectedPlan.name} (${selectedPlan.price} ₽)`,
+        status: 'Оплачено'
     });
     
     saveState(state);
     closeModal('payModal');
-    alert('Оплата прошла успешно!');
+    alert(`Оплата пройдена! Подписка "${selectedPlan.name}" активирована.`);
 }
 
 function render() {
     const state = getState();
-    const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-', warns: 0 };
+    const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-', warns: 0, sub: { active: false, plan: '-', expire: '-' } };
 
     // Шапка
     const authNav = document.getElementById('navAuth');
@@ -428,17 +447,32 @@ function render() {
         }
     }
 
-    // Профиль
+    // Профиль и Панель Пользователя
     if (document.getElementById('profUsername')) {
         document.getElementById('profUsername').textContent = user.login;
         document.getElementById('profGroup').innerHTML = getRoleBadgeHtml(user.role);
         document.getElementById('profPosts').textContent = user.posts || 0;
-        document.getElementById('profReg').textContent = user.regDate || '2 августа';
+        document.getElementById('profReg').textContent = user.regDate || 'Сегодня';
         document.getElementById('profRepScore').textContent = user.rep || 0;
         document.getElementById('profWarns').textContent = user.warns || 0;
         
         if (user.avatar) document.getElementById('profAvatar').src = user.avatar;
         if (user.cover) document.getElementById('profCover').style.background = user.cover;
+
+        // Данные подписки в Панели пользователя
+        const sub = user.sub || { active: false, plan: '-', expire: '-' };
+        const statusEl = document.getElementById('userSubStatus');
+        const expireEl = document.getElementById('userSubExpire');
+
+        if (sub.active) {
+            statusEl.textContent = `АКТИВНА (${sub.plan})`;
+            statusEl.style.color = '#4cd964';
+            expireEl.textContent = sub.expire === 'Навсегда' ? 'Срок действия: Навсегда' : `Действует до: ${sub.expire}`;
+        } else {
+            statusEl.textContent = 'НЕ АКТИВНА';
+            statusEl.style.color = '#ff4d4d';
+            expireEl.textContent = 'Оформите подписку на главной странице';
+        }
 
         const repScore = user.rep || 0;
         let status = 'Нейтральная';
@@ -465,7 +499,7 @@ function render() {
         `).join('');
     }
 
-    // Активность
+    // Лента активности
     const activityFeed = document.getElementById('profileActivityFeed');
     if (activityFeed) {
         const userTopics = state.topics.filter(t => t.author === user.login);
@@ -485,19 +519,19 @@ function render() {
         }
     }
 
-    // Таблица Заказов в Админке
+    // Таблица Заказов
     const ordersTbody = document.getElementById('adminOrdersTable');
     if (ordersTbody) {
         ordersTbody.innerHTML = state.orders.map(o => `
             <tr>
                 <td>${escapeHtml(o.email)}</td>
-                <td><span style="color:#4cd964">${o.status}</span></td>
+                <td><strong style="color:var(--yellow)">${o.plan || '30 Дней'}</strong></td>
                 <td><button style="color:#ff4d4d; background:none; border:0; cursor:pointer;" onclick="deleteOrder(${o.id})">Удалить</button></td>
             </tr>
         `).join('');
     }
 
-    // Таблица Пользователей и ролей в Админке
+    // Таблица Юзеров (Выдача и СНЯТИЕ баллов)
     const usersTbody = document.getElementById('adminUsersTable');
     if (usersTbody) {
         usersTbody.innerHTML = state.users.map(u => `
@@ -511,14 +545,15 @@ function render() {
                     </select>
                 </td>
                 <td>
-                    <button class="btn btn-outline btn-sm" onclick="addWarnPoints('${u.login}', 10)">+10 б.</button>
-                    <button class="btn btn-outline btn-sm" onclick="addWarnPoints('${u.login}', 30)">+30 б.</button>
+                    <button class="btn btn-outline btn-sm" title="Выдать баллы" onclick="modifyWarnPoints('${u.login}', 10)">+10</button>
+                    <button class="btn btn-outline btn-sm" title="Снять баллы (Амнистия)" onclick="modifyWarnPoints('${u.login}', -10)" style="color:#4cd964; border-color:#4cd964;">-10</button>
+                    <button class="btn btn-outline btn-sm" title="Сбросить все баллы" onclick="modifyWarnPoints('${u.login}', -999)" style="color:#2ecc71;">Сброс</button>
                 </td>
             </tr>
         `).join('');
     }
 
-    // Таблица Жалоб в Админке
+    // ОТДЕЛЬНЫЙ РАЗДЕЛ ЖАЛОБ В АДМИНКЕ
     const reportsTbody = document.getElementById('adminReportsTable');
     if (reportsTbody) {
         reportsTbody.innerHTML = state.reports.length === 0 
@@ -529,7 +564,7 @@ function render() {
                 <td><span style="color:#ff6b6b">${escapeHtml(r.target)}</span></td>
                 <td>${escapeHtml(r.reason)}</td>
                 <td>
-                    <button class="btn btn-primary btn-sm" onclick="addWarnPoints('${r.target}', 10); dismissReport(${r.id});">+10 б.</button>
+                    <button class="btn btn-primary btn-sm" onclick="modifyWarnPoints('${r.target}', 10); dismissReport(${r.id});">+10 б.</button>
                     <button class="btn btn-outline btn-sm" onclick="dismissReport(${r.id})">Отклонить</button>
                 </td>
             </tr>
