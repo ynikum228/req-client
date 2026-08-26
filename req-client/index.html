@@ -118,7 +118,94 @@
             </div>
         </div>
     </main>
+    
+<!-- СЕКЦИЯ: ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (MTA PROVINCE STYLE) -->
+<main id="tab-profile" class="tab-content">
+    <div class="wrap page-padding">
+        
+        <!-- Шапка профиля -->
+        <div class="profile-header-card">
+            <div class="profile-cover" id="profCover">
+                <button class="btn btn-outline btn-sm cover-btn"><i class="fas fa-camera"></i> Обложка</button>
+            </div>
+            <div class="profile-main-info">
+                <div class="avatar-container">
+                    <img src="https://i.imgur.com/8Km9tLL.png" alt="Avatar" id="profAvatar">
+                </div>
+                <div class="user-details">
+                    <h2 id="profUsername">-812</h2>
+                    <span class="user-group" id="profGroup">Пользователь</span>
+                </div>
+                <div class="profile-stats">
+                    <div class="stat-item"><span class="lbl">ПОСТОВ</span><strong id="profPosts">6</strong></div>
+                    <div class="stat-item"><span class="lbl">ЗАРЕГИСТРИРОВАН</span><strong id="profReg">2 августа</strong></div>
+                    <div class="stat-item"><span class="lbl">ПОСЕЩЕНИЕ</span><strong>Только что</strong></div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Двухколоночный макет -->
+        <div class="profile-grid">
+            
+            <!-- Левый сайдбар -->
+            <aside class="profile-sidebar">
+                <!-- Блок Репутации -->
+                <div class="rep-card">
+                    <span class="rep-title">РЕПУТАЦИЯ</span>
+                    <div class="rep-score" id="profRepScore">0</div>
+                    <div class="rep-status" id="profRepStatus">Нейтральная</div>
+                    <a href="#" class="rep-link">Активность репутации &rsaquo;</a>
+                </div>
+
+                <!-- Предупреждения -->
+                <div class="warn-card">
+                    <div class="warn-circle">
+                        <span id="profWarns">0</span>
+                    </div>
+                    <div class="warn-info">
+                        <strong>баллов предупреждений</strong>
+                        <p>Никакие ограничения не применены</p>
+                    </div>
+                </div>
+
+                <!-- Подписчики -->
+                <div class="side-block">
+                    <div class="side-block-header">
+                        <span>0 Подписчиков</span>
+                        <a href="#">Опции &rsaquo;</a>
+                    </div>
+                    <p class="empty-text">Подписчиков нет</p>
+                </div>
+
+                <!-- Игровой персонаж -->
+                <div class="side-block">
+                    <div class="side-block-header">
+                        <span>Информация о персонаже</span>
+                    </div>
+                    <div class="char-info-row">
+                        <span class="char-lbl">Игровой ник</span>
+                        <span class="char-val" id="profGameNick">Rom_Roysfield</span>
+                    </div>
+                    <div class="char-info-row">
+                        <span class="char-lbl">Город проживания</span>
+                        <span class="char-val" id="profCity">Нет информации</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Правая колонка: Лента активности -->
+            <section class="profile-feed">
+                <div class="feed-header">
+                    <h3>Недавняя активность</h3>
+                </div>
+                <div class="feed-list" id="profileActivityFeed">
+                    <!-- Заполняется динамически через JS -->
+                </div>
+            </section>
+
+        </div>
+    </div>
+</main>
     <!-- МОДАЛЬНЫЕ ОКНА -->
     <!-- Оплата -->
     <div class="modal" id="payModal">
