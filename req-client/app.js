@@ -1,275 +1,540 @@
-:root {
-    --bg-main: #090705;
-    --card-bg: rgba(18, 13, 9, 0.88);
-    --border-glow: rgba(255, 140, 26, 0.2);
-    --accent: #ff8c1a;
-    --accent-glow: rgba(255, 140, 26, 0.4);
-    --yellow: #ffd166;
-    --text-main: #fff8ed;
-    --text-muted: #85705a;
-    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+let currentTopicId = null;
+
+const ROLES = {
+    user: { title: 'Пользователь', class: 'role-user' },
+    admin: { title: 'Администратор', class: 'role-admin' },
+    tester: { title: 'Тестер', class: 'role-tester' },
+    dev: { title: 'Разработчик', class: 'role-dev' },
+    support: { title: 'Агент поддержки', class: 'role-support' }
+};
+
+function getRoleBadgeHtml(roleKey) {
+    const role = ROLES[roleKey] || ROLES.user;
+    return `<span class="role-badge ${role.class}">${role.title}</span>`;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font); }
+const defaultState = {
+    currentUser: { 
+        login: 'requiem', 
+        role: 'dev',
+        rep: 21, 
+        posts: 1, 
+        regDate: 'Сегодня',
+        avatar: 'https://i.imgur.com/8Km9tLL.png',
+        cover: '',
+        warns: 0,
+        banUntil: null
+    },
+    orders: [
+        { id: 101, email: 'user@example.com', status: 'Оплачено (150 ₽)' }
+    ],
+    users: [
+        { login: 'requiem', role: 'dev', rep: 21, warns: 0, banUntil: null },
+        { login: '-812', role: 'admin', rep: 12, warns: 0, banUntil: null },
+        { login: 'Tester_John', role: 'tester', rep: 5, warns: 0, banUntil: null },
+        { login: 'Support_Alex', role: 'support', rep: 14, warns: 0, banUntil: null }
+    ],
+    topics: [
+        { 
+            id: 1, 
+            title: 'Тестовая тема форума', 
+            author: 'requiem', 
+            posts: [
+                { id: 1001, author: 'requiem', text: 'Добро пожаловать в обновленный форум REQ-Client!', date: 'Только что', likes: [] }
+            ]
+        }
+    ],
+    reports: []
+};
 
-body {
-    background-color: var(--bg-main);
-    background-image: 
-        radial-gradient(circle at 50% -10%, rgba(255, 140, 26, 0.18) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(255, 140, 26, 0.05) 0%, transparent 40%);
-    color: var(--text-main);
-    min-height: 100vh;
+// Принудительный сброс старой структуры данных для применения исправлений
+(function checkVersion() {
+    if (localStorage.getItem('req_v3') !== 'true') {
+        localStorage.removeItem('req_state');
+        localStorage.setItem('req_v3', 'true');
+    }
+})();
+
+function getState() {
+    const data = localStorage.getItem('req_state');
+    return data ? JSON.parse(data) : defaultState;
 }
 
-.wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-.page-padding { padding-top: 40px; padding-bottom: 40px; }
-
-/* Навигация */
-.navbar {
-    background: rgba(9, 7, 5, 0.95);
-    border-bottom: 1px solid var(--border-glow);
-    backdrop-filter: blur(12px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-.nav-content { display: flex; justify-content: space-between; align-items: center; height: 70px; }
-.logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 800; font-size: 18px; }
-.logo i { color: var(--accent); font-size: 22px; filter: drop-shadow(0 0 8px var(--accent-glow)); }
-
-.nav-links { display: flex; gap: 20px; }
-.nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.25s; display: flex; align-items: center; gap: 6px; }
-.nav-links a:hover { color: var(--yellow); }
-
-.badge-free { background: var(--accent); color: #000; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 800; }
-
-/* Кнопки */
-.btn {
-    padding: 10px 20px;
-    border-radius: 10px;
-    border: 0;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-    transition: 0.25s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-}
-.btn-primary { background: linear-gradient(135deg, #ffd166, #f57c00); color: #120b05; box-shadow: 0 4px 15px var(--accent-glow); }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 140, 26, 0.6); }
-.btn-outline { background: transparent; border: 1px solid var(--border-glow); color: var(--yellow); }
-.btn-outline:hover, .btn-outline.active { border-color: var(--accent); color: #fff; background: rgba(255,140,26,0.1); }
-.btn-block { width: 100%; }
-.btn-sm { padding: 5px 10px; font-size: 11px; }
-
-/* Табы */
-.tab-content { display: none; }
-.tab-content.active { display: block; }
-
-/* Hero */
-.hero { padding: 80px 0; text-align: center; }
-.hero h1 { font-size: 42px; font-weight: 800; margin: 15px 0; }
-.hero p { color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; }
-.tag { background: rgba(255, 140, 26, 0.1); border: 1px solid var(--border-glow); color: var(--accent); font-size: 12px; padding: 6px 14px; border-radius: 20px; font-weight: 600; }
-
-.hero-card {
-    max-width: 400px; margin: 0 auto; background: var(--card-bg);
-    border: 1px solid var(--border-glow); border-radius: 20px; padding: 30px;
-    backdrop-filter: blur(10px); text-align: left;
-}
-.price-header { margin-bottom: 20px; border-bottom: 1px solid var(--border-glow); padding-bottom: 15px; }
-.price-title { color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 700; }
-.price-val { font-size: 32px; font-weight: 800; color: #fff; margin-top: 5px; }
-.price-val span { font-size: 14px; color: var(--text-muted); font-weight: 400; }
-
-.features-list { list-style: none; margin-bottom: 25px; }
-.features-list li { margin-bottom: 12px; color: #e0d0bf; font-size: 14px; display: flex; align-items: center; gap: 10px; }
-.features-list i { color: var(--accent); }
-
-/* Форум */
-.bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-.topic-item {
-    background: var(--card-bg); border: 1px solid var(--border-glow);
-    border-radius: 14px; padding: 18px; margin-bottom: 12px;
-    display: flex; justify-content: space-between; align-items: center;
-    transition: 0.2s;
-}
-.topic-item:hover { border-color: var(--accent); }
-.topic-clickable { cursor: pointer; flex-grow: 1; }
-.topic-info h4 { font-size: 16px; margin-bottom: 4px; color: #fff; }
-.topic-info p { color: var(--text-muted); font-size: 12px; }
-
-/* Просмотр темы */
-.topic-header-box {
-    background: var(--card-bg); border: 1px solid var(--border-glow);
-    border-radius: 12px; padding: 20px; margin-bottom: 20px;
-}
-.topic-header-box h2 { color: #fff; margin-bottom: 8px; font-size: 20px; }
-.topic-meta-info { color: var(--text-muted); font-size: 12px; }
-
-.post-card {
-    background: #120f14; border: 1px solid rgba(255, 140, 26, 0.15);
-    border-radius: 12px; padding: 20px; margin-bottom: 15px;
-    display: flex; gap: 20px;
-}
-.post-author-box { width: 130px; text-align: center; flex-shrink: 0; }
-.post-author-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid var(--accent); }
-.post-author-name { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-
-.post-content-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.post-text { font-size: 14px; color: #e0d0bf; line-height: 1.5; margin-bottom: 15px; }
-.post-footer { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 140, 26, 0.1); padding-top: 10px; }
-
-.reply-form-card {
-    background: var(--card-bg); border: 1px solid var(--border-glow);
-    border-radius: 12px; padding: 20px; margin-top: 30px;
-}
-.reply-form-card h3 { font-size: 16px; margin-bottom: 15px; color: #fff; }
-
-/* СТИЛИ РОЛЕЙ И БЕЙДЖЕЙ */
-.role-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.role-user { background: rgba(133, 112, 90, 0.2); color: #a493ab; border: 1px solid rgba(133, 112, 90, 0.4); }
-.role-admin { background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.5); }
-.role-tester { background: rgba(155, 89, 182, 0.2); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.5); }
-.role-dev { background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.5); }
-.role-support { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.5); }
-
-/* Профиль */
-.profile-header-card {
-    background: #120f14;
-    border: 1px solid rgba(255, 140, 26, 0.15);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 25px;
+function saveState(state) {
+    localStorage.setItem('req_state', JSON.stringify(state));
+    render();
 }
 
-.profile-cover {
-    height: 180px;
-    background: linear-gradient(135deg, #2b1b36 0%, #150d1a 50%, #3d1b28 100%);
-    background-size: cover;
-    background-position: center;
-    position: relative;
+function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-.cover-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); }
-
-.profile-main-info {
-    padding: 0 25px 20px 25px;
-    display: flex;
-    align-items: flex-end;
-    gap: 20px;
-    position: relative;
-    top: -40px;
-    margin-bottom: -40px;
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById(`tab-${tabName}`);
+    if (target) target.classList.add('active');
 }
 
-.avatar-container { position: relative; cursor: pointer; }
-.avatar-container img {
-    width: 100px; height: 100px; border-radius: 50%;
-    border: 4px solid #120f14; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: cover;
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openPaymentModal() { openModal('payModal'); }
+
+// Расчет временных банов и постоянного закрытия форума
+function checkBanStatus(user) {
+    if (!user) return { isBanned: false };
+    const warns = user.warns || 0;
+
+    if (warns >= 80) {
+        return { isBanned: true, isPermanent: true, reason: 'Форум закрыт навсегда (80+ баллов)' };
+    }
+
+    if (user.banUntil && user.banUntil !== 'PERMANENT' && new Date(user.banUntil) > new Date()) {
+        const daysLeft = Math.ceil((new Date(user.banUntil) - new Date()) / (1000 * 60 * 60 * 24));
+        return { isBanned: true, isPermanent: false, daysLeft: daysLeft };
+    }
+
+    return { isBanned: false };
 }
 
-.avatar-overlay {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.5);
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: 0.2s; color: #fff;
-}
-.avatar-container:hover .avatar-overlay { opacity: 1; }
-
-.user-details h2 { font-size: 22px; color: #fff; margin-bottom: 4px; }
-
-.profile-stats {
-    margin-left: auto; display: flex; gap: 20px;
-    background: rgba(0,0,0,0.4); padding: 10px 18px; border-radius: 8px;
+// Открытие темы
+function openTopic(id) {
+    currentTopicId = Number(id);
+    switchTab('topic-view');
+    renderTopicView();
 }
 
-.stat-item { display: flex; flex-direction: column; }
-.stat-item .lbl { font-size: 9px; color: #726277; font-weight: 700; }
-.stat-item strong { font-size: 13px; color: #e2d2e8; }
+function renderTopicView() {
+    const state = getState();
+    const topic = state.topics.find(t => t.id === currentTopicId);
+    if (!topic) return;
 
-.profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+    document.getElementById('viewTopicTitle').textContent = topic.title;
+    document.getElementById('viewTopicMeta').innerHTML = `Автор: <strong>${escapeHtml(topic.author)}</strong> | Сообщений: ${topic.posts.length}`;
 
-.rep-card {
-    background: linear-gradient(180deg, #e67e22 0%, #d35400 100%);
-    border-radius: 10px; padding: 15px; text-align: center;
-    color: #fff; margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(230, 126, 34, 0.25);
+    const container = document.getElementById('topicRepliesContainer');
+    const user = state.currentUser;
+    const banInfo = checkBanStatus(user);
+
+    container.innerHTML = topic.posts.map(p => {
+        const authorObj = state.users.find(u => u.login === p.author) || { role: 'user' };
+        const likesArr = p.likes || [];
+        const isLiked = user && likesArr.includes(user.login);
+
+        return `
+            <div class="post-card">
+                <div class="post-author-box">
+                    <img src="https://i.imgur.com/8Km9tLL.png" class="post-author-avatar">
+                    <div class="post-author-name">${escapeHtml(p.author)}</div>
+                    <div>${getRoleBadgeHtml(authorObj.role)}</div>
+                </div>
+                <div class="post-content-box">
+                    <div class="post-text">${escapeHtml(p.text)}</div>
+                    <div class="post-footer">
+                        <span>Опубликовано: ${p.date || 'Недавно'}</span>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button class="btn btn-outline btn-sm ${isLiked ? 'active' : ''}" onclick="toggleLikePost(${topic.id}, ${p.id})">
+                                <i class="fas fa-heart" style="color:${isLiked ? '#ff4d4d' : '#85705a'};"></i> ${likesArr.length}
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="reportPost('${p.author}', '${escapeHtml(p.text.substring(0, 30))}')" style="color:#ff6b6b; border-color:rgba(255,107,107,0.3);">
+                                <i class="fas fa-flag"></i> Жалоба
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Вывод формы ответа или уведомления об ограничении
+    const replyCard = document.getElementById('replyFormContainer');
+    if (replyCard) {
+        if (banInfo.isBanned) {
+            replyCard.innerHTML = `
+                <div style="color:#ff4d4d; font-weight:700; text-align:center; padding:20px; border:1px solid rgba(255,77,77,0.3); border-radius:10px; background:rgba(255,77,77,0.05);">
+                    <i class="fas fa-ban" style="font-size:24px; margin-bottom:10px; display:block;"></i>
+                    Доступ к написанию сообщений ограничен! <br>
+                    ${banInfo.isPermanent ? 'Доступ закрыт навсегда (80+ баллов).' : `Срок блокировки: ещё ${banInfo.daysLeft} дн.`}
+                </div>`;
+        } else {
+            replyCard.innerHTML = `
+                <h3>Оставить ответ</h3>
+                <div class="form-group">
+                    <textarea id="newReplyText" rows="4" placeholder="Напишите ваш ответ..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="submitReply()"><i class="fas fa-paper-plane"></i> Отправить ответ</button>
+            `;
+        }
+    }
 }
-.rep-title { font-size: 10px; font-weight: 800; opacity: 0.9; }
-.rep-score { font-size: 32px; font-weight: 800; line-height: 1.1; margin: 4px 0; }
-.rep-status { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-.rep-link { color: rgba(255,255,255,0.8); font-size: 11px; }
 
-.warn-card {
-    background: #120f14; border: 1px solid rgba(255, 140, 26, 0.15);
-    border-radius: 10px; padding: 15px; display: flex; align-items: center;
-    gap: 15px; margin-bottom: 15px;
+// Защищенный лайк (1 лайк от 1 юзера)
+function toggleLikePost(topicId, postId) {
+    const state = getState();
+    if (!state.currentUser) return alert('Авторизуйтесь!');
+
+    const topic = state.topics.find(t => t.id === topicId);
+    if (!topic) return;
+
+    const post = topic.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    if (!post.likes) post.likes = [];
+    const userIndex = post.likes.indexOf(state.currentUser.login);
+    const authorObj = state.users.find(u => u.login === post.author);
+
+    if (userIndex === -1) {
+        post.likes.push(state.currentUser.login);
+        if (authorObj) authorObj.rep = (authorObj.rep || 0) + 1;
+        if (state.currentUser.login === post.author) state.currentUser.rep += 1;
+    } else {
+        post.likes.splice(userIndex, 1);
+        if (authorObj) authorObj.rep = Math.max(0, (authorObj.rep || 0) - 1);
+        if (state.currentUser.login === post.author) state.currentUser.rep = Math.max(0, state.currentUser.rep - 1);
+    }
+
+    saveState(state);
+    renderTopicView();
 }
-.warn-circle {
-    width: 42px; height: 42px; border: 3px solid #3d3143; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px; color: #a493ab;
+
+// Отправка ответа
+function submitReply() {
+    const state = getState();
+    const user = state.currentUser;
+    const banInfo = checkBanStatus(user);
+
+    if (banInfo.isBanned) return alert('Ваш аккаунт заблокирован!');
+
+    const input = document.getElementById('newReplyText');
+    const text = input ? input.value.trim() : '';
+    if (!text) return alert('Введите текст ответа!');
+
+    const topic = state.topics.find(t => t.id === currentTopicId);
+
+    if (topic) {
+        topic.posts.push({
+            id: Date.now(),
+            author: user.login,
+            text: text,
+            date: 'Только что',
+            likes: []
+        });
+
+        user.posts = (user.posts || 0) + 1;
+        saveState(state);
+        renderTopicView();
+    }
 }
-.warn-info strong { display: block; font-size: 12px; color: #ddd; }
-.warn-info p { font-size: 10px; color: #6e5e73; margin-top: 2px; }
 
-.side-block { background: #120f14; border: 1px solid rgba(255, 140, 26, 0.15); border-radius: 10px; padding: 15px; margin-bottom: 15px; }
-.side-block-header { display: flex; justify-content: space-between; font-size: 12px; color: #8f7d93; margin-bottom: 12px; font-weight: 700; }
-.side-block-header a { color: #e67e22; text-decoration: none; font-size: 11px; }
-.empty-text { font-size: 11px; color: #57485c; }
+// Жалобы
+function reportPost(targetAuthor, previewText) {
+    const state = getState();
+    if (!state.currentUser) return alert('Авторизуйтесь!');
 
-.feed-header h3 { font-size: 16px; color: #eee; margin-bottom: 15px; }
-.act-item {
-    background: #120f14; border: 1px solid rgba(255, 140, 26, 0.12);
-    border-radius: 10px; padding: 15px; margin-bottom: 12px;
-    display: flex; gap: 12px;
+    const reason = prompt(`Причина жалобы на ${targetAuthor}:`);
+    if (reason) {
+        state.reports.push({
+            id: Date.now(),
+            sender: state.currentUser.login,
+            target: targetAuthor,
+            text: previewText,
+            reason: reason,
+            date: 'Только что'
+        });
+        saveState(state);
+        alert('Жалоба передана модераторам!');
+    }
 }
-.act-icon { color: #e67e22; font-size: 14px; margin-top: 2px; }
-.act-body h5 { font-size: 13px; color: #ff8c1a; margin-bottom: 4px; }
-.act-body p { font-size: 12px; color: #bbb; line-height: 1.4; margin-bottom: 6px; }
-.act-date { font-size: 10px; color: #57485c; }
 
-/* Админка */
-.admin-notice { background: rgba(255, 140, 26, 0.1); border: 1px solid var(--accent); padding: 15px 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
-.admin-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-.card { background: var(--card-bg); border: 1px solid var(--border-glow); border-radius: 16px; padding: 20px; }
-.card h3 { margin-bottom: 15px; font-size: 16px; }
+// Выдача баллов и установка банов в Админке
+function addWarnPoints(username, points) {
+    const state = getState();
+    const u = state.users.find(x => x.login === username);
+    if (!u) return;
 
-.table-responsive { overflow-x: auto; }
-.admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-.admin-table th, .admin-table td { padding: 10px; border-bottom: 1px solid rgba(255,140,26,0.1); }
-.admin-table th { color: var(--text-muted); font-weight: 600; }
-.admin-select { background: rgba(0,0,0,0.6); border: 1px solid var(--border-glow); color: #fff; padding: 5px; border-radius: 6px; font-size: 12px; }
+    u.warns = (u.warns || 0) + points;
 
-/* Модалки */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
-.modal.open { display: flex; }
-.modal-card { background: #120d09; border: 1px solid var(--border-glow); border-radius: 20px; width: 100%; max-width: 420px; padding: 25px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.close-btn { background: none; border: 0; color: var(--text-muted); font-size: 22px; cursor: pointer; }
+    if (u.warns >= 80) {
+        u.banUntil = 'PERMANENT';
+    } else if (u.warns >= 30) {
+        let date = new Date();
+        date.setDate(date.getDate() + 30);
+        u.banUntil = date.toISOString();
+    } else if (u.warns >= 10) {
+        let date = new Date();
+        date.setDate(date.getDate() + 7);
+        u.banUntil = date.toISOString();
+    }
 
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 5px; font-weight: 600; }
-.form-group input, .form-group textarea, .form-group select {
-    width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border-glow); border-radius: 10px; padding: 10px; color: #fff; outline: none;
+    if (state.currentUser && state.currentUser.login === username) {
+        state.currentUser.warns = u.warns;
+        state.currentUser.banUntil = u.banUntil;
+    }
+
+    saveState(state);
+    alert(`Пользователю ${username} добавлено +${points} баллов! Всего: ${u.warns}`);
 }
-.form-group input:focus { border-color: var(--accent); }
-.pay-amount { text-align: center; font-size: 18px; margin-bottom: 20px; }
-.pay-amount strong { color: var(--yellow); font-size: 24px; }
 
-@media (max-width: 850px) {
-    .profile-grid { grid-template-columns: 1fr; }
-    .profile-main-info { flex-direction: column; align-items: center; text-align: center; top: -50px; }
-    .profile-stats { margin-left: 0; width: 100%; justify-content: space-around; }
+function dismissReport(id) {
+    const state = getState();
+    state.reports = state.reports.filter(r => r.id !== id);
+    saveState(state);
 }
+
+// Создание тем
+function createTopic() {
+    const state = getState();
+    const banInfo = checkBanStatus(state.currentUser);
+
+    if (banInfo.isBanned) return alert('Ваш аккаунт заблокирован!');
+
+    const title = document.getElementById('topicTitle').value.trim();
+    const body = document.getElementById('topicBody').value.trim() || title;
+
+    if(!title) return alert('Заполните заголовок!');
+
+    const authorName = state.currentUser ? state.currentUser.login : 'Гость';
+
+    state.topics.unshift({
+        id: Date.now(),
+        title: title,
+        author: authorName,
+        posts: [
+            { id: Date.now() + 1, author: authorName, text: body, date: 'Только что', likes: [] }
+        ]
+    });
+
+    if (state.currentUser) state.currentUser.posts = (state.currentUser.posts || 0) + 1;
+
+    saveState(state);
+    closeModal('createTopicModal');
+    document.getElementById('topicTitle').value = '';
+    document.getElementById('topicBody').value = '';
+}
+
+function changeAvatar() {
+    const url = prompt('Введите URL новой аватарки:');
+    if (url) {
+        const state = getState();
+        if (state.currentUser) {
+            state.currentUser.avatar = url;
+            saveState(state);
+        }
+    }
+}
+
+function changeCover() {
+    const url = prompt('Введите URL обложки профиля:');
+    if (url) {
+        const state = getState();
+        if (state.currentUser) {
+            state.currentUser.cover = `url('${url}')`;
+            saveState(state);
+        }
+    }
+}
+
+function openAuth(type) {
+    document.getElementById('authModalTitle').textContent = type === 'login' ? 'Авторизация' : 'Регистрация';
+    document.getElementById('authSubmitBtn').textContent = type === 'login' ? 'Войти' : 'Зарегистрироваться';
+    openModal('authModal');
+}
+
+function handleAuth() {
+    const login = document.getElementById('authLogin').value.trim();
+    if(!login) return alert('Введите логин!');
+
+    const state = getState();
+    let userObj = state.users.find(u => u.login.toLowerCase() === login.toLowerCase());
+    
+    if (!userObj) {
+        userObj = { login: login, role: 'user', rep: 0, warns: 0, banUntil: null };
+        state.users.push(userObj);
+    }
+
+    state.currentUser = {
+        login: userObj.login,
+        role: userObj.role || 'user',
+        rep: userObj.rep || 0,
+        posts: 0,
+        regDate: 'Сегодня',
+        avatar: 'https://i.imgur.com/8Km9tLL.png',
+        warns: userObj.warns || 0,
+        banUntil: userObj.banUntil || null
+    };
+
+    saveState(state);
+    closeModal('authModal');
+}
+
+function logout() {
+    const state = getState();
+    state.currentUser = null;
+    saveState(state);
+}
+
+function deleteOrder(id) {
+    const state = getState();
+    state.orders = state.orders.filter(o => o.id !== id);
+    saveState(state);
+}
+
+function changeUserRole(login, newRole) {
+    const state = getState();
+    const u = state.users.find(x => x.login === login);
+    if(u) {
+        u.role = newRole;
+        if (state.currentUser && state.currentUser.login === login) {
+            state.currentUser.role = newRole;
+        }
+        saveState(state);
+    }
+}
+
+function processPayment() {
+    const email = document.getElementById('payEmail').value;
+    if (!email) return alert('Введите ваш Email!');
+
+    const state = getState();
+    state.orders.push({
+        id: Math.floor(100 + Math.random() * 900),
+        email: email,
+        status: 'Оплачено (150 ₽)'
+    });
+    
+    saveState(state);
+    closeModal('payModal');
+    alert('Оплата прошла успешно!');
+}
+
+function render() {
+    const state = getState();
+    const user = state.currentUser || { login: 'Гость', role: 'user', rep: 0, posts: 0, regDate: '-', warns: 0 };
+
+    // Шапка
+    const authNav = document.getElementById('navAuth');
+    if (authNav) {
+        if (state.currentUser) {
+            authNav.innerHTML = `
+                <a href="#" onclick="switchTab('profile'); return false;" style="color:var(--yellow); font-size:13px; font-weight:700; text-decoration:none;">
+                    <i class="fas fa-user-circle"></i> ${escapeHtml(state.currentUser.login)}
+                </a>
+                <button class="btn btn-outline btn-sm" onclick="logout()">Выйти</button>
+            `;
+        } else {
+            authNav.innerHTML = `
+                <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Войти</button>
+                <button class="btn btn-primary btn-sm" onclick="openAuth('reg')">Регистрация</button>
+            `;
+        }
+    }
+
+    // Профиль
+    if (document.getElementById('profUsername')) {
+        document.getElementById('profUsername').textContent = user.login;
+        document.getElementById('profGroup').innerHTML = getRoleBadgeHtml(user.role);
+        document.getElementById('profPosts').textContent = user.posts || 0;
+        document.getElementById('profReg').textContent = user.regDate || '2 августа';
+        document.getElementById('profRepScore').textContent = user.rep || 0;
+        document.getElementById('profWarns').textContent = user.warns || 0;
+        
+        if (user.avatar) document.getElementById('profAvatar').src = user.avatar;
+        if (user.cover) document.getElementById('profCover').style.background = user.cover;
+
+        const repScore = user.rep || 0;
+        let status = 'Нейтральная';
+        if (repScore > 0 && repScore <= 10) status = 'Положительная';
+        if (repScore > 10) status = 'Высокая';
+        document.getElementById('profRepStatus').textContent = status;
+    }
+
+    // Форум
+    const forumContainer = document.getElementById('topicsContainer');
+    if (forumContainer) {
+        forumContainer.innerHTML = state.topics.map(t => `
+            <div class="topic-item">
+                <div class="topic-clickable" onclick="openTopic(${t.id})">
+                    <div class="topic-info">
+                        <h4>${escapeHtml(t.title)}</h4>
+                        <p>Автор: <strong>${escapeHtml(t.author)}</strong></p>
+                    </div>
+                </div>
+                <div>
+                    <span style="color:var(--yellow); font-size:13px; font-weight:700;">${t.posts ? t.posts.length : 0} ответов</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Активность
+    const activityFeed = document.getElementById('profileActivityFeed');
+    if (activityFeed) {
+        const userTopics = state.topics.filter(t => t.author === user.login);
+        if (userTopics.length === 0) {
+            activityFeed.innerHTML = '<p class="empty-text">Нет активности.</p>';
+        } else {
+            activityFeed.innerHTML = userTopics.map(t => `
+                <div class="act-item" onclick="openTopic(${t.id})" style="cursor:pointer;">
+                    <i class="fas fa-comment act-icon"></i>
+                    <div class="act-body">
+                        <h5>${escapeHtml(t.title)}</h5>
+                        <p><strong>${escapeHtml(user.login)}</strong> создал тему или ответ</p>
+                        <span class="act-date">Недавно</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    // Таблица Заказов в Админке
+    const ordersTbody = document.getElementById('adminOrdersTable');
+    if (ordersTbody) {
+        ordersTbody.innerHTML = state.orders.map(o => `
+            <tr>
+                <td>${escapeHtml(o.email)}</td>
+                <td><span style="color:#4cd964">${o.status}</span></td>
+                <td><button style="color:#ff4d4d; background:none; border:0; cursor:pointer;" onclick="deleteOrder(${o.id})">Удалить</button></td>
+            </tr>
+        `).join('');
+    }
+
+    // Таблица Пользователей и ролей в Админке
+    const usersTbody = document.getElementById('adminUsersTable');
+    if (usersTbody) {
+        usersTbody.innerHTML = state.users.map(u => `
+            <tr>
+                <td>${escapeHtml(u.login)}</td>
+                <td>${getRoleBadgeHtml(u.role)}</td>
+                <td><strong style="color:#ff6b6b">${u.warns || 0}</strong></td>
+                <td>
+                    <select class="admin-select" onchange="changeUserRole('${u.login}', this.value)">
+                        ${Object.keys(ROLES).map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLES[r].title}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-outline btn-sm" onclick="addWarnPoints('${u.login}', 10)">+10 б.</button>
+                    <button class="btn btn-outline btn-sm" onclick="addWarnPoints('${u.login}', 30)">+30 б.</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Таблица Жалоб в Админке
+    const reportsTbody = document.getElementById('adminReportsTable');
+    if (reportsTbody) {
+        reportsTbody.innerHTML = state.reports.length === 0 
+            ? '<tr><td colspan="4" style="color:var(--text-muted); text-align:center;">Жалоб нет</td></tr>'
+            : state.reports.map(r => `
+            <tr>
+                <td><strong>${escapeHtml(r.sender)}</strong></td>
+                <td><span style="color:#ff6b6b">${escapeHtml(r.target)}</span></td>
+                <td>${escapeHtml(r.reason)}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="addWarnPoints('${r.target}', 10); dismissReport(${r.id});">+10 б.</button>
+                    <button class="btn btn-outline btn-sm" onclick="dismissReport(${r.id})">Отклонить</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', render);
