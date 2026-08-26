@@ -10,16 +10,79 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
   <style>
-    body { font-family: 'Inter', sans-serif; background-color: #0b0b0e; color: #e2e8f0; }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background-color: #08080a; 
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #0f1015; }
-    ::-webkit-scrollbar-thumb { background: #262936; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+    ::-webkit-scrollbar-track { background: #0b0c10; }
+    ::-webkit-scrollbar-thumb { background: #1f222e; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+
+    .glow-orange {
+      box-shadow: 0 0 50px -10px rgba(234, 88, 12, 0.35);
+    }
+    
+    .glow-orange-sm {
+      box-shadow: 0 0 20px -5px rgba(234, 88, 12, 0.4);
+    }
+
+    .glass-card {
+      background: linear-gradient(135deg, rgba(20, 22, 31, 0.8) 0%, rgba(13, 14, 20, 0.9) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .glass-card-active {
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.12) 0%, rgba(15, 16, 23, 0.95) 100%);
+      border: 1px solid rgba(234, 88, 12, 0.5);
+    }
+
+    /* Стильный слайдер в стиле Midnight */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      background: #181a24;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 24px;
+      width: 24px;
+      border-radius: 50%;
+      background: #ea580c;
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -8px;
+      box-shadow: 0 0 15px #ea580c;
+      border: 2px solid #ffffff;
+      transition: all 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 25px #ea580c;
+    }
   </style>
 </head>
-<body class="bg-[#0b0b0e] text-gray-200 antialiased selection:bg-orange-500/30 selection:text-orange-200">
+<body class="bg-[#08080a] text-gray-200 antialiased selection:bg-orange-500/30 selection:text-orange-200 min-h-screen relative">
+  <!-- Бэкграунд свечение -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-orange-600/10 blur-[140px] pointer-events-none rounded-full"></div>
+
   <div id="root"></div>
 
   <script type="text/babel">
@@ -31,32 +94,35 @@
 
     function Header({ activeTab, setActiveTab, user, onLogout, onOpenAuth }) {
       return (
-        <header className="bg-[#12131a]/90 backdrop-blur-md border-b border-gray-800/80 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <div onClick={() => setActiveTab('buy')} className="flex items-center gap-2 cursor-pointer group">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-600 to-red-600 flex items-center justify-center shadow-lg shadow-orange-600/30 group-hover:scale-105 transition">
-                  <i data-lucide="flame" className="text-white fill-white w-4 h-4"></i>
+        <header className="border-b border-white/[0.06] bg-[#0c0d12]/80 backdrop-blur-xl sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-10">
+              <div onClick={() => setActiveTab('buy')} className="flex items-center gap-3 cursor-pointer group">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 via-red-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-600/30 group-hover:scale-105 transition-all duration-300">
+                  <i data-lucide="flame" className="text-white fill-white w-5 h-5"></i>
                 </div>
-                <span className="font-black text-xl text-white tracking-wider">
-                  REQUIEM<span className="text-orange-500">.FUN</span>
-                </span>
+                <div>
+                  <span className="font-black text-2xl text-white tracking-wider block leading-none">
+                    REQUIEM<span className="text-orange-500">.FUN</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">CS2 Next-Gen Software</span>
+                </div>
               </div>
 
-              <nav className="hidden md:flex items-center gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800/80 text-xs font-semibold">
+              <nav className="hidden md:flex items-center gap-1 bg-white/[0.03] p-1.5 rounded-2xl border border-white/[0.05]">
                 <button 
                   onClick={() => setActiveTab('buy')} 
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'buy' ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20' : 'hover:text-white hover:bg-gray-800/50'}`}
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${activeTab === 'buy' ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-600/25' : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'}`}
                 >
-                  <i data-lucide="shopping-cart" className="w-3.5 h-3.5"></i> Купить
+                  <i data-lucide="shopping-bag" className="w-4 h-4"></i> Магазин
                 </button>
 
                 {user && (
                   <button 
                     onClick={() => setActiveTab('activate')} 
-                    className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'activate' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-400 hover:bg-emerald-950/30'}`}
+                    className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${activeTab === 'activate' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-emerald-400 hover:bg-emerald-950/30'}`}
                   >
-                    <i data-lucide="key-round" className="w-3.5 h-3.5"></i> Активация
+                    <i data-lucide="key-round" className="w-4 h-4"></i> Активация
                   </button>
                 )}
 
@@ -64,16 +130,16 @@
                   <>
                     <button 
                       onClick={() => setActiveTab('keygen')} 
-                      className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'keygen' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-400 hover:bg-purple-950/30'}`}
+                      className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${activeTab === 'keygen' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-purple-400 hover:bg-purple-950/30'}`}
                     >
-                      <i data-lucide="key" className="w-3.5 h-3.5"></i> Ключи
+                      <i data-lucide="cpu" className="w-4 h-4"></i> Генератор Ключей
                     </button>
 
                     <button 
                       onClick={() => setActiveTab('admin')} 
-                      className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'admin' ? 'bg-red-600 text-white shadow-md' : 'text-red-400 hover:bg-red-950/30'}`}
+                      className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${activeTab === 'admin' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-red-400 hover:bg-red-950/30'}`}
                     >
-                      <i data-lucide="shield" className="w-3.5 h-3.5"></i> Панель
+                      <i data-lucide="shield-alert" className="w-4 h-4"></i> Админка
                     </button>
                   </>
                 )}
@@ -81,31 +147,32 @@
             </div>
 
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setActiveTab('profile')}
-                  className="flex items-center gap-2.5 bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800 hover:border-gray-700 transition"
+                  className="flex items-center gap-3 glass-card px-4 py-2 rounded-2xl border border-white/10 hover:border-orange-500/50 transition duration-300"
                 >
-                  <div className="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold uppercase">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white font-black text-sm uppercase shadow-md shadow-orange-500/20">
                     {user.username ? user.username[0] : 'U'}
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-white leading-none flex items-center gap-1">
-                      {user.username} {user.role === 'owner' && <i data-lucide="crown" className="w-2.5 h-2.5 text-amber-400"></i>}
+                    <div className="text-xs font-black text-white leading-none flex items-center gap-1.5">
+                      {user.username} {user.role === 'owner' && <i data-lucide="crown" className="w-3 h-3 text-amber-400 fill-amber-400"></i>}
                     </div>
-                    <div className="text-[9px] text-orange-400 font-mono font-bold uppercase">{user.role || 'USER'}</div>
+                    <div className="text-[10px] text-orange-400 font-mono font-bold uppercase mt-1">{user.role || 'USER'}</div>
                   </div>
                 </button>
-                <button onClick={onLogout} className="p-2 text-gray-500 hover:text-red-400 transition" title="Выйти">
+                
+                <button onClick={onLogout} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-gray-400 hover:text-red-400 hover:bg-red-950/30 transition">
                   <i data-lucide="log-out" className="w-4 h-4"></i>
                 </button>
               </div>
             ) : (
               <button 
                 onClick={onOpenAuth}
-                className="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-orange-600/20 flex items-center gap-2"
+                className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold px-6 py-3 rounded-2xl text-xs transition-all duration-300 shadow-xl shadow-orange-600/25 flex items-center gap-2 hover:scale-[1.02]"
               >
-                <i data-lucide="user" className="w-3.5 h-3.5"></i> Войти / Регистрация
+                <i data-lucide="user" className="w-4 h-4"></i> Войти в аккаунт
               </button>
             )}
           </div>
@@ -113,6 +180,105 @@
       );
     }
 
+    // Вкладка покупки с Midnight-слайдером
+    function BuyTab() {
+      const [daysIndex, setDaysIndex] = useState(1); // 0 = 10 дней, 1 = 30 дней, 2 = 90 дней
+      const plans = [
+        { days: 10, price: 490, label: 'Старт', badge: '' },
+        { days: 30, price: 1490, label: 'Популярный', badge: 'ХИТ ПРОДАЖ' },
+        { days: 90, price: 3290, label: 'Максимум', badge: 'ВЫГОДА -25%' }
+      ];
+
+      const currentPlan = plans[daysIndex];
+
+      return (
+        <div className="max-w-4xl mx-auto space-y-10 py-4">
+          <div className="text-center space-y-3">
+            <span className="px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-bold tracking-widest uppercase">
+              Официальные продажи REQUIEM
+            </span>
+            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">ВЫБЕРИТЕ СВОЙ ТАРИФ</h1>
+            <p className="text-sm text-gray-400 max-w-lg mx-auto">Полный функционал включен во все подписки. Безопасность и регулярные обновления 24/7.</p>
+          </div>
+
+          <div className="glass-card rounded-3xl p-8 sm:p-10 space-y-10 border border-white/10 glow-orange relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Слайдер дней (Midnight Style) */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Длительность</span>
+                  <span className="text-3xl font-black text-white">{currentPlan.days} Дней</span>
+                </div>
+                {currentPlan.badge && (
+                  <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 text-white font-extrabold text-[10px] tracking-wider uppercase shadow-lg shadow-orange-600/30">
+                    {currentPlan.badge}
+                  </span>
+                )}
+              </div>
+
+              {/* Сам ползунок */}
+              <div className="space-y-3">
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="2" 
+                  step="1"
+                  value={daysIndex} 
+                  onChange={(e) => setDaysIndex(Number(e.target.value))}
+                />
+                
+                <div className="flex justify-between text-xs font-bold text-gray-500">
+                  <span onClick={() => setDaysIndex(0)} className={`cursor-pointer transition ${daysIndex === 0 ? 'text-orange-400 font-extrabold scale-110' : 'hover:text-gray-300'}`}>10 Дней</span>
+                  <span onClick={() => setDaysIndex(1)} className={`cursor-pointer transition ${daysIndex === 1 ? 'text-orange-400 font-extrabold scale-110' : 'hover:text-gray-300'}`}>30 Дней</span>
+                  <span onClick={() => setDaysIndex(2)} className={`cursor-pointer transition ${daysIndex === 2 ? 'text-orange-400 font-extrabold scale-110' : 'hover:text-gray-300'}`}>90 Дней</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Выбор карточек */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {plans.map((p, idx) => (
+                <div 
+                  key={p.days}
+                  onClick={() => setDaysIndex(idx)}
+                  className={`p-5 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between ${
+                    daysIndex === idx 
+                      ? 'glass-card-active shadow-xl shadow-orange-600/20 scale-[1.02]' 
+                      : 'bg-white/[0.02] border border-white/[0.05] hover:border-white/20'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-gray-400">{p.label}</span>
+                    <div className="text-xl font-black text-white">{p.days} Дней</div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-white/[0.05] font-mono font-black text-orange-400 text-lg">
+                    {p.price} ₽
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Итоговая сумма и кнопка */}
+            <div className="pt-8 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div>
+                <span className="text-xs text-gray-400 block font-bold">Итоговая стоимость</span>
+                <div className="text-4xl font-black text-white font-mono tracking-tight mt-0.5">
+                  {currentPlan.price} <span className="text-orange-500 text-2xl font-sans">RUB</span>
+                </div>
+              </div>
+
+              <button className="w-full sm:w-auto bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black px-10 py-5 rounded-2xl text-base transition-all duration-300 shadow-2xl shadow-orange-600/40 flex items-center justify-center gap-3 hover:scale-[1.02]">
+                <i data-lucide="credit-card" className="w-5 h-5"></i> Оплатить через ЮMoney / Карту
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Модалка авторизации
     function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       const [isRegister, setIsRegister] = useState(false);
       const [username, setUsername] = useState('');
@@ -142,13 +308,14 @@
           }
 
           if (authData.user) {
+            const isOwner = username.toLowerCase() === 'morphezy';
             await supabaseClient.from('profiles').insert([{
               id: authData.user.id,
               username: username.trim(),
-              role: username.toLowerCase() === 'morphezy' ? 'owner' : 'user'
+              role: isOwner ? 'owner' : 'user'
             }]);
             
-            onLoginSuccess({ id: authData.user.id, username, role: username.toLowerCase() === 'morphezy' ? 'owner' : 'user' });
+            onLoginSuccess({ id: authData.user.id, username, role: isOwner ? 'owner' : 'user' });
             onClose();
           }
         } else {
@@ -176,49 +343,49 @@
       };
 
       return (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#12131a] border border-gray-800 w-full max-w-md p-6 rounded-3xl space-y-6 relative">
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card border border-white/10 w-full max-w-md p-8 rounded-3xl space-y-6 relative glow-orange">
+            <button onClick={onClose} className="absolute top-5 right-5 text-gray-400 hover:text-white transition">
               <i data-lucide="x" className="w-5 h-5"></i>
             </button>
 
             <div className="text-center space-y-1">
-              <h2 className="text-xl font-black text-white">{isRegister ? 'РЕГИСТРАЦИЯ' : 'АВТОРИЗАЦИЯ'}</h2>
-              <p className="text-xs text-gray-400">Войдите в аккаунт REQUIEM.FUN</p>
+              <h2 className="text-2xl font-black text-white tracking-wide">{isRegister ? 'СОЗДАТЬ АККАУНТ' : 'АВТОРИЗАЦИЯ'}</h2>
+              <p className="text-xs text-gray-400">Введите свои данные для входа в панель REQUIEM</p>
             </div>
 
-            {error && <div className="p-3 bg-red-950/50 border border-red-800 text-red-300 text-xs rounded-xl">{error}</div>}
+            {error && <div className="p-3 bg-red-950/60 border border-red-800 text-red-300 text-xs font-bold rounded-2xl">{error}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs text-gray-400">Логин</label>
+                <label className="text-xs font-bold text-gray-400">Логин</label>
                 <input 
                   type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#0b0b0e] border border-gray-800 text-xs text-white rounded-xl p-3 outline-none focus:border-orange-500"
+                  className="w-full bg-black/50 border border-white/10 text-xs text-white rounded-2xl p-4 outline-none focus:border-orange-500 transition"
                   placeholder="Введите логин"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-gray-400">Пароль</label>
+                <label className="text-xs font-bold text-gray-400">Пароль</label>
                 <input 
                   type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#0b0b0e] border border-gray-800 text-xs text-white rounded-xl p-3 outline-none focus:border-orange-500"
+                  className="w-full bg-black/50 border border-white/10 text-xs text-white rounded-2xl p-4 outline-none focus:border-orange-500 transition"
                   placeholder="••••••••"
                 />
               </div>
 
               <button 
                 type="submit" disabled={loading}
-                className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl text-xs transition disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black py-4 rounded-2xl text-xs transition-all shadow-xl shadow-orange-600/30 disabled:opacity-50"
               >
-                {loading ? 'Загрузка...' : isRegister ? 'Создать аккаунт' : 'Войти'}
+                {loading ? 'Загрузка...' : isRegister ? 'Зарегистрироваться' : 'Войти в личный кабинет'}
               </button>
             </form>
 
-            <div className="text-center pt-2 border-t border-gray-800/80">
-              <button onClick={() => setIsRegister(!isRegister)} className="text-xs text-gray-400 hover:text-orange-400 transition">
-                {isRegister ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться'}
+            <div className="text-center pt-3 border-t border-white/[0.08]">
+              <button onClick={() => setIsRegister(!isRegister)} className="text-xs font-bold text-gray-400 hover:text-orange-400 transition">
+                {isRegister ? 'Уже есть аккаунт? Войти' : 'Ещё нет аккаунта? Создать'}
               </button>
             </div>
           </div>
@@ -226,6 +393,7 @@
       );
     }
 
+    // Активация ключей
     function ActivateKeyTab({ user, onUpdateUser }) {
       const [keyInput, setKeyInput] = useState('');
       const [status, setStatus] = useState({ type: '', msg: '' });
@@ -245,13 +413,13 @@
           .single();
 
         if (keyErr || !keyData) {
-          setStatus({ type: 'error', msg: 'Ключ не найден или введен неверно!' });
+          setStatus({ type: 'error', msg: 'Указанный ключ не существует или был введен с ошибкой!' });
           setLoading(false);
           return;
         }
 
         if (keyData.is_used) {
-          setStatus({ type: 'error', msg: 'Этот ключ уже был активирован!' });
+          setStatus({ type: 'error', msg: 'Этот ключ уже активирован!' });
           setLoading(false);
           return;
         }
@@ -273,101 +441,48 @@
           .update({ subscription_until: subUntil.toISOString() })
           .eq('id', user.id);
 
-        setStatus({ type: 'success', msg: 'Ключ успешно активирован! Подписка продлена.' });
+        setStatus({ type: 'success', msg: 'Успех! Подписка успешно активирована на вашем аккаунте.' });
         setKeyInput('');
         onUpdateUser();
         setLoading(false);
       };
 
       return (
-        <div className="max-w-xl mx-auto space-y-6">
+        <div className="max-w-xl mx-auto space-y-8 py-6">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-black text-white">АКТИВАЦИЯ ЛИЦЕНЗИОННОГО КЛЮЧА</h1>
-            <p className="text-xs text-gray-400">Вставьте купленный или полученный ключ для продления подписки</p>
+            <h1 className="text-3xl font-black text-white">АКТИВАЦИЯ КЛЮЧА</h1>
+            <p className="text-xs text-gray-400">Введите ваш 16-значный лицензионный ключ в поле ниже</p>
           </div>
 
-          <form onSubmit={handleActivate} className="bg-[#12131a] border border-gray-800 p-6 rounded-2xl space-y-4">
+          <form onSubmit={handleActivate} className="glass-card border border-white/10 p-8 rounded-3xl space-y-6 glow-orange">
             {status.msg && (
-              <div className={`p-3 rounded-xl text-xs ${status.type === 'error' ? 'bg-red-950/50 border border-red-800 text-red-300' : 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'}`}>
+              <div className={`p-4 rounded-2xl text-xs font-bold ${status.type === 'error' ? 'bg-red-950/60 border border-red-800 text-red-300' : 'bg-emerald-950/60 border border-emerald-800 text-emerald-300'}`}>
                 {status.msg}
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs text-gray-400">Ваш ключ доступа</label>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400">Лицензионный Ключ</label>
               <input 
                 type="text" required value={keyInput} onChange={(e) => setKeyInput(e.target.value)}
                 placeholder="REQ-XXXX-XXXX-XXXX"
-                className="w-full bg-[#0b0b0e] border border-gray-800 text-xs font-mono text-white rounded-xl p-3 outline-none focus:border-emerald-500 uppercase tracking-widest text-center"
+                className="w-full bg-black/60 border border-white/10 text-sm font-mono font-bold text-orange-400 rounded-2xl p-4 outline-none focus:border-emerald-500 uppercase tracking-widest text-center"
               />
             </div>
 
             <button 
               type="submit" disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-4 rounded-2xl text-xs transition shadow-xl shadow-emerald-600/25 disabled:opacity-50"
             >
-              {loading ? 'Проверка...' : 'Активировать ключ'}
+              {loading ? 'Проверка...' : 'Активировать Лицензию'}
             </button>
           </form>
         </div>
       );
     }
 
-    function BuyTab() {
-      const [subscriptionDays, setSubscriptionDays] = useState(30);
-      const calculatePrice = (days) => days === 10 ? 490 : days === 30 ? 1490 : 3290;
-
-      return (
-        <div className="max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-black text-white tracking-wide">ПОКУПКА ПОДПИСКИ REQUIEM</h1>
-            <p className="text-xs text-gray-400">Выберите подходящий тариф для получения моментального доступа</p>
-          </div>
-
-          <div className="bg-[#12131a] border border-gray-800/80 p-8 rounded-3xl space-y-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="space-y-4">
-              <label className="text-xs font-bold uppercase tracking-wider text-orange-400 block text-center">
-                Выберите длительность подписки
-              </label>
-
-              <div className="grid grid-cols-3 gap-3">
-                {[10, 30, 90].map((days) => (
-                  <button
-                    key={days}
-                    onClick={() => setSubscriptionDays(days)}
-                    className={`p-4 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1 ${
-                      subscriptionDays === days 
-                        ? 'bg-orange-600/15 border-orange-500 text-white shadow-lg shadow-orange-600/10' 
-                        : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:border-gray-700'
-                    }`}
-                  >
-                    <span className="text-lg font-black">{days} Дней</span>
-                    <span className="text-[10px] font-mono text-gray-500">{calculatePrice(days)} RUB</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <div className="text-xs text-gray-500">Сумма к оплате:</div>
-                <div className="text-3xl font-black text-white font-mono tracking-tight">
-                  {calculatePrice(subscriptionDays)}.00 <span className="text-orange-500 text-xl">RUB</span>
-                </div>
-              </div>
-
-              <button className="w-full sm:w-auto bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold px-8 py-4 rounded-2xl text-sm transition shadow-xl shadow-orange-600/25 flex items-center justify-center gap-2">
-                <i data-lucide="credit-card" className="w-4 h-4"></i> Оплатить и получить доступ
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function KeygenTab({ user }) {
+    // Генерация ключей (Owner/Admin)
+    function KeygenTab() {
       const [generatedKeys, setGeneratedKeys] = useState([]);
       const [keyDuration, setKeyDuration] = useState('lifetime');
       const [keyAmount, setKeyAmount] = useState(1);
@@ -411,52 +526,52 @@
       };
 
       return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-          <div className="bg-[#12131a] border border-purple-900/40 p-5 rounded-2xl flex items-center justify-between">
-            <h1 className="text-base font-bold text-white flex items-center gap-2">
-              <i data-lucide="key" className="text-purple-400 w-4 h-4"></i> Генерация лицензионных ключей (Admin Control)
+        <div className="space-y-6 max-w-5xl mx-auto py-4">
+          <div className="glass-card border border-purple-900/40 p-6 rounded-3xl flex items-center justify-between">
+            <h1 className="text-lg font-black text-white flex items-center gap-3">
+              <i data-lucide="cpu" className="text-purple-400 w-5 h-5"></i> Панель Генерации Лицензий (Supabase Admin)
             </h1>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <form onSubmit={handleGenerateKeys} className="bg-[#12131a] border border-gray-800/80 p-5 rounded-2xl space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs text-gray-400">Срок действия</label>
+            <form onSubmit={handleGenerateKeys} className="glass-card border border-white/10 p-6 rounded-3xl space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400">Срок действия</label>
                 <select 
                   value={keyDuration}
                   onChange={(e) => setKeyDuration(e.target.value)}
-                  className="w-full bg-[#0b0b0e] border border-gray-800 text-xs text-white rounded-xl p-2.5 outline-none"
+                  className="w-full bg-black/50 border border-white/10 text-xs text-white rounded-xl p-3 outline-none"
                 >
                   <option value="lifetime">Lifetime (Навсегда)</option>
                   <option value="30_days">30 Дней</option>
                 </select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs text-gray-400">Количество</label>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400">Количество</label>
                 <input 
                   type="number" min="1" max="20" value={keyAmount}
                   onChange={(e) => setKeyAmount(e.target.value)}
-                  className="w-full bg-[#0b0b0e] border border-gray-800 text-xs text-white rounded-xl p-2.5 outline-none"
+                  className="w-full bg-black/50 border border-white/10 text-xs text-white rounded-xl p-3 outline-none"
                 />
               </div>
 
               <button 
                 type="submit" disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-extrabold py-3.5 rounded-xl text-xs transition disabled:opacity-50 shadow-lg shadow-purple-600/30"
               >
                 {loading ? 'Создание...' : 'Сгенерировать'}
               </button>
             </form>
 
-            <div className="md:col-span-2 bg-[#12131a] border border-gray-800/80 p-5 rounded-2xl space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Все ключи ({generatedKeys.length})</h3>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            <div className="md:col-span-2 glass-card border border-white/10 p-6 rounded-3xl space-y-4">
+              <h3 className="text-xs font-black text-white uppercase tracking-wider">Все созданные ключи ({generatedKeys.length})</h3>
+              <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
                 {generatedKeys.map(k => (
-                  <div key={k.id} className="p-3 bg-[#0b0b0e] border border-gray-800 rounded-xl flex items-center justify-between text-xs">
+                  <div key={k.id} className="p-3.5 bg-black/40 border border-white/[0.05] rounded-xl flex items-center justify-between text-xs">
                     <span className={`font-mono font-bold ${k.is_used ? 'line-through text-gray-600' : 'text-purple-300'}`}>{k.key_code}</span>
-                    <span className={`font-mono text-[10px] ${k.is_used ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {k.is_used ? 'ИСПОЛЬЗОВАН' : k.duration_days === -1 ? 'Lifetime' : `${k.duration_days} дн.`}
+                    <span className={`font-mono text-[10px] font-bold px-2 py-1 rounded-md ${k.is_used ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`}>
+                      {k.is_used ? 'АКТИВИРОВАН' : k.duration_days === -1 ? 'LIFETIME' : `${k.duration_days} ДН.`}
                     </span>
                   </div>
                 ))}
@@ -467,22 +582,23 @@
       );
     }
 
+    // Профиль
     function ProfileTab({ user }) {
       return (
-        <div className="space-y-6 max-w-3xl mx-auto">
-          <div className="bg-[#12131a] border border-gray-800/80 rounded-2xl p-6 flex items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl bg-orange-600 flex items-center justify-center text-white text-2xl font-bold uppercase">
+        <div className="space-y-6 max-w-3xl mx-auto py-6">
+          <div className="glass-card border border-white/10 rounded-3xl p-8 flex items-center gap-6 glow-orange">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-3xl font-black uppercase shadow-xl shadow-orange-600/30">
               {user.username ? user.username[0] : 'U'}
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black text-white">{user.username}</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-md border border-orange-600 bg-orange-950/70 text-orange-400 font-bold uppercase">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-black text-white">{user.username}</h2>
+                <span className="text-xs px-3 py-1 rounded-lg border border-orange-500/50 bg-orange-500/20 text-orange-400 font-extrabold uppercase tracking-wider">
                   {user.role || 'USER'}
                 </span>
               </div>
-              <div className="text-xs font-mono text-gray-400">
-                Подписка: {user.subscription_until ? new Date(user.subscription_until).toLocaleDateString() : 'Нет активной подписки'}
+              <div className="text-xs font-mono text-gray-400 font-bold">
+                Статус подписки: <span className="text-orange-400">{user.subscription_until ? `Активна до ${new Date(user.subscription_until).toLocaleDateString()}` : 'Нет активной подписки'}</span>
               </div>
             </div>
           </div>
@@ -518,7 +634,7 @@
       };
 
       return (
-        <div className="min-h-screen bg-[#0b0b0e] text-gray-300 font-sans">
+        <div className="min-h-screen bg-[#08080a] text-gray-200 font-sans pb-16">
           <Header 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
@@ -527,15 +643,15 @@
             onOpenAuth={() => setIsAuthOpen(true)}
           />
           
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
             {activeTab === 'buy' && <BuyTab />}
             {activeTab === 'activate' && user && <ActivateKeyTab user={user} onUpdateUser={() => fetchProfile(user)} />}
-            {activeTab === 'keygen' && user && (user.role === 'owner' || user.role === 'admin') && <KeygenTab user={user} />}
+            {activeTab === 'keygen' && user && (user.role === 'owner' || user.role === 'admin') && <KeygenTab />}
             {activeTab === 'profile' && user && <ProfileTab user={user} />}
             {activeTab === 'admin' && user && (user.role === 'owner' || user.role === 'admin') && (
-              <div className="max-w-3xl mx-auto bg-[#12131a] border border-amber-500/30 p-6 rounded-2xl text-xs flex justify-between items-center">
-                <span className="text-white font-bold">{user.username} ({user.role})</span>
-                <span className="text-amber-400 font-bold">Full Root Access</span>
+              <div className="max-w-3xl mx-auto glass-card border border-amber-500/30 p-8 rounded-3xl text-xs flex justify-between items-center">
+                <span className="text-white font-bold text-base">{user.username} ({user.role})</span>
+                <span className="text-amber-400 font-black tracking-widest uppercase">Full Owner Root Access</span>
               </div>
             )}
           </main>
