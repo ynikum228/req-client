@@ -34,18 +34,40 @@
                 <h1>Максимальный FPS и отклик в CS2</h1>
                 <p>Единая экосистема для настройки конфигов, автооптимизации реестра и приватного комьюнити.</p>
                 
-                <div class="hero-card">
-                    <div class="price-header">
-                        <span class="price-title">Премиум Доступ</span>
-                        <div class="price-val">150 ₽ <span>/ месяц</span></div>
+                <h2 style="margin-bottom: 25px; font-size: 24px;">Выберите тариф подписки</h2>
+                
+                <!-- Тарифные планы -->
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <h3>14 Дней</h3>
+                        <div class="price-val">159 ₽</div>
+                        <button class="btn btn-outline btn-block" onclick="openPaymentModal(14, 159, '14 Дней')">Купить</button>
                     </div>
-                    <ul class="features-list">
-                        <li><i class="fas fa-check"></i> Доступ ко всем пресетам оптимизации</li>
-                        <li><i class="fas fa-check"></i> Кастомные HUD & UI конфиги</li>
-                        <li><i class="fas fa-check"></i> Приватный раздел форума</li>
-                        <li><i class="fas fa-check"></i> Автоматические обновления лаунчера</li>
-                    </ul>
-                    <button class="btn btn-primary btn-block" onclick="openPaymentModal()">Оформить подписку</button>
+
+                    <div class="pricing-card featured">
+                        <span class="pop-tag">ПОПУЛЯРНЫЙ</span>
+                        <h3>30 Дней</h3>
+                        <div class="price-val">299 ₽</div>
+                        <button class="btn btn-primary btn-block" onclick="openPaymentModal(30, 299, '30 Дней')">Купить</button>
+                    </div>
+
+                    <div class="pricing-card">
+                        <h3>90 Дней</h3>
+                        <div class="price-val">849 ₽</div>
+                        <button class="btn btn-outline btn-block" onclick="openPaymentModal(90, 849, '90 Дней')">Купить</button>
+                    </div>
+
+                    <div class="pricing-card">
+                        <h3>180 Дней</h3>
+                        <div class="price-val">1659 ₽</div>
+                        <button class="btn btn-outline btn-block" onclick="openPaymentModal(180, 1659, '180 Дней')">Купить</button>
+                    </div>
+
+                    <div class="pricing-card lifetime">
+                        <h3>Life Time</h3>
+                        <div class="price-val">5000 ₽</div>
+                        <button class="btn btn-primary btn-block" onclick="openPaymentModal(99999, 5000, 'Навсегда')">Навсегда</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -78,15 +100,12 @@
                 <div class="topic-meta-info" id="viewTopicMeta"></div>
             </div>
 
-            <!-- Сообщения темы -->
             <div class="replies-list" id="topicRepliesContainer"></div>
-
-            <!-- Форма ответа / Блок бана -->
             <div class="reply-form-card" id="replyFormContainer"></div>
         </div>
     </main>
 
-    <!-- ПРОФИЛЬ -->
+    <!-- ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ / ПРОФИЛЬ -->
     <main id="tab-profile" class="tab-content">
         <div class="wrap page-padding">
             
@@ -95,17 +114,17 @@
                     <button class="btn btn-outline btn-sm cover-btn" onclick="changeCover()"><i class="fas fa-camera"></i> Изменить обложку</button>
                 </div>
                 <div class="profile-main-info">
-                    <div class="avatar-container" onclick="changeAvatar()" title="Нажмите, чтобы сменить аватар">
+                    <div class="avatar-container" onclick="changeAvatar()" title="Сменить аватар">
                         <img src="https://i.imgur.com/8Km9tLL.png" alt="Avatar" id="profAvatar">
                         <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
                     </div>
                     <div class="user-details">
-                        <h2 id="profUsername">-812</h2>
+                        <h2 id="profUsername">requiem</h2>
                         <span id="profGroup"></span>
                     </div>
                     <div class="profile-stats">
                         <div class="stat-item"><span class="lbl">ПОСТОВ</span><strong id="profPosts">0</strong></div>
-                        <div class="stat-item"><span class="lbl">ЗАРЕГИСТРИРОВАН</span><strong id="profReg">2 августа</strong></div>
+                        <div class="stat-item"><span class="lbl">ЗАРЕГИСТРИРОВАН</span><strong id="profReg">Сегодня</strong></div>
                         <div class="stat-item"><span class="lbl">ПОСЕЩЕНИЕ</span><strong>Только что</strong></div>
                     </div>
                 </div>
@@ -114,11 +133,17 @@
             <div class="profile-grid">
                 <!-- Сайдбар -->
                 <aside class="profile-sidebar">
+                    <!-- Блок подписки -->
+                    <div class="sub-card">
+                        <div class="sub-header"><i class="fas fa-crown"></i> Статус подписки</div>
+                        <div class="sub-status" id="userSubStatus">Не активна</div>
+                        <div class="sub-date" id="userSubExpire">Оплатите подписку для доступа к функциям</div>
+                    </div>
+
                     <div class="rep-card">
                         <span class="rep-title">РЕПУТАЦИЯ</span>
                         <div class="rep-score" id="profRepScore">0</div>
                         <div class="rep-status" id="profRepStatus">Нейтральная</div>
-                        <span class="rep-link">Активность репутации &rsaquo;</span>
                     </div>
 
                     <div class="warn-card">
@@ -127,14 +152,6 @@
                             <strong>баллов предупреждений</strong>
                             <p>Система ограничений аккаунта</p>
                         </div>
-                    </div>
-
-                    <div class="side-block">
-                        <div class="side-block-header">
-                            <span>0 Подписчиков</span>
-                            <a href="#">Опции &rsaquo;</a>
-                        </div>
-                        <p class="empty-text">Подписчиков нет</p>
                     </div>
                 </aside>
 
@@ -155,14 +172,14 @@
             <div class="admin-notice">
                 <i class="fas fa-shield-halved"></i>
                 <div>
-                    <strong>Панель модерации:</strong> Управление ролями, жалобами и предупреждениями.
+                    <strong>Панель модерации:</strong> Раздел жалоб, амнистия и управление баллами.
                 </div>
             </div>
 
             <div class="admin-grid" style="grid-template-columns: 1fr; gap:25px;">
-                <!-- Жалобы -->
+                <!-- ОТДЕЛЬНЫЙ РАЗДЕЛ ЖАЛОБ -->
                 <div class="card">
-                    <h3>Поступившие жалобы</h3>
+                    <h3><i class="fas fa-flag" style="color:#ff6b6b"></i> Отдельный раздел жалоб пользователей</h3>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
@@ -170,7 +187,7 @@
                                     <th>Отправитель</th>
                                     <th>На кого</th>
                                     <th>Причина</th>
-                                    <th>Действие</th>
+                                    <th>Действие модератора</th>
                                 </tr>
                             </thead>
                             <tbody id="adminReportsTable"></tbody>
@@ -178,9 +195,9 @@
                     </div>
                 </div>
 
-                <!-- Пользователи и баллы -->
+                <!-- Пользователи, Роли, Начисление и СНЯТИЕ баллов -->
                 <div class="card">
-                    <h3>Управление пользователями, ролями и баллами</h3>
+                    <h3><i class="fas fa-users-gear"></i> Управление пользователями и Амнистия (Снятие баллов)</h3>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
@@ -189,7 +206,7 @@
                                     <th>Роль</th>
                                     <th>Баллы</th>
                                     <th>Сменить роль</th>
-                                    <th>Наказать</th>
+                                    <th>Выдать / Снять баллы</th>
                                 </tr>
                             </thead>
                             <tbody id="adminUsersTable"></tbody>
@@ -199,13 +216,13 @@
 
                 <!-- Подписки -->
                 <div class="card">
-                    <h3>Заказы подписок</h3>
+                    <h3>Заказы и подписки</h3>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>Email</th>
-                                    <th>Статус</th>
+                                    <th>Тариф</th>
                                     <th>Действие</th>
                                 </tr>
                             </thead>
@@ -221,13 +238,13 @@
     <div class="modal" id="payModal">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Подписка REQ-Client</h3>
+                <h3>Оплата подписки REQ-Client</h3>
                 <button class="close-btn" onclick="closeModal('payModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="pay-amount">К оплате: <strong>150 ₽</strong></div>
+                <div class="pay-amount">Тариф: <strong id="payPlanName">30 Дней</strong> (<span id="payPlanPrice">299</span> ₽)</div>
                 <div class="form-group">
-                    <label>Email для привязки ключа</label>
+                    <label>Email для привязки подписки</label>
                     <input type="email" id="payEmail" placeholder="example@mail.com" required>
                 </div>
                 <div class="form-group">
@@ -238,7 +255,7 @@
                         <option>Криптовалюта</option>
                     </select>
                 </div>
-                <button class="btn btn-primary btn-block" onclick="processPayment()">Оплатить 150 ₽</button>
+                <button class="btn btn-primary btn-block" onclick="processPayment()">Оплатить</button>
             </div>
         </div>
     </div>
