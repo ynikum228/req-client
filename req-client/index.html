@@ -3,45 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REQUIEM.FUN — Private Software</title>
+    <title>REQUIEM.FUN — Dark-Orange Forum</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #1a222d; color: #94a3b8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .bg-custom-dark { background-color: #202b37; }
-        .bg-custom-card { background-color: #263343; }
-        .bg-custom-sidebar { background-color: #283748; }
-        .border-custom { border-color: rgba(255, 255, 255, 0.08); }
-        .text-accent { color: #38bdf8; }
+        body { background-color: #0d0d0d; color: #a1a1aa; font-family: system-ui, -apple-system, sans-serif; }
+        .bg-custom-dark { background-color: #141414; }
+        .bg-custom-card { background-color: #1a1a1a; }
+        .bg-custom-hover { background-color: #242424; }
+        .border-custom { border-color: rgba(255, 255, 255, 0.07); }
         
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: #1a222d;
-            height: 6px;
-            border-radius: 3px;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 18px;
-            width: 18px;
-            border-radius: 50%;
-            background: #38bdf8;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-        }
+        .text-orange-main { color: #f97316; }
+        .bg-orange-main { background-color: #f97316; }
+        .border-orange-main { border-color: #f97316; }
+
+        .role-admin { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .role-coder { background: rgba(249, 115, 22, 0.15); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.3); }
+        .role-vip { background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .role-user { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
 
         .nav-link { border-bottom: 2px solid transparent; padding-bottom: 4px; transition: all 0.2s; cursor: pointer; }
-        .nav-link.active { color: #ffffff; border-color: #38bdf8; }
-        
-        @keyframes slideIn {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .toast-animate { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .nav-link.active { color: #f97316; border-color: #f97316; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: #0d0d0d; height: 6px; border-radius: 3px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #f97316; cursor: pointer; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-rose-600 selection:text-white">
+<body class="min-h-screen flex flex-col justify-between selection:bg-orange-500 selection:text-white">
 
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -49,129 +37,139 @@
     <header class="bg-custom-dark border-b border-custom px-6 py-3 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto flex items-center justify-between text-sm">
             <div class="flex items-center space-x-6">
-                <div class="font-bold text-lg text-white tracking-widest flex items-center gap-2 cursor-pointer" onclick="switchPage('home')">
-                    <i class="fa-solid fa-fire text-rose-500"></i> REQUIEM<span class="text-rose-500">.FUN</span>
+                <div class="font-black text-xl text-white tracking-widest flex items-center gap-2 cursor-pointer" onclick="switchPage('home')">
+                    <i class="fa-solid fa-fire text-orange-main"></i> REQUIEM<span class="text-orange-main">.FUN</span>
                 </div>
-                <nav class="flex space-x-5 text-xs font-medium">
+                <nav class="flex space-x-5 text-xs font-semibold">
                     <button id="nav-home" onclick="switchPage('home')" class="nav-link hover:text-white active">Главная</button>
                     <button id="nav-forum" onclick="switchPage('forum')" class="nav-link hover:text-white">Форум</button>
                     <button id="nav-buy" onclick="switchPage('catalog')" class="nav-link hover:text-white">Купить</button>
-                    <button id="nav-dash" onclick="switchPage('dash')" class="nav-link hover:text-white">Панель пользователя</button>
+                    <button id="nav-dash" onclick="switchPage('dash')" class="nav-link hover:text-white">Панель</button>
                 </nav>
             </div>
             <div class="flex items-center space-x-4 text-xs">
-                <div class="flex items-center space-x-2 cursor-pointer" onclick="switchPage('dash')">
-                    <div class="w-6 h-6 rounded-full bg-rose-900/50 border border-rose-500 text-rose-300 flex items-center justify-center font-bold text-[10px]">M</div>
-                    <span class="text-white font-medium">Morphezy</span>
+                <div class="flex items-center space-x-2">
+                    <div class="w-7 h-7 rounded bg-amber-500/10 border border-amber-500/40 text-amber-500 flex items-center justify-center font-bold text-xs">M</div>
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold leading-tight">Morphezy</span>
+                        <span class="text-[10px] role-coder px-1 rounded text-center font-bold">CODER</span>
+                    </div>
                 </div>
-                <span class="text-slate-400">|</span>
-                <span class="text-xs text-sky-400 font-bold" id="user-sub-status">Подписка: 20 дн.</span>
+                <span class="text-zinc-700">|</span>
+                <span class="text-xs text-amber-400 font-bold" id="user-sub-status">Подписка: 20 дн.</span>
             </div>
         </div>
     </header>
 
-    <!-- СТРАНИЦА: ГЛАВНАЯ (ОТЗЫВЫ) -->
+    <!-- СТРАНИЦА: ГЛАВНАЯ -->
     <main id="page-home" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow">
-        <div class="bg-custom-dark rounded-lg p-8 border border-custom space-y-4">
-            <div class="inline-block bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[10px] font-bold px-2.5 py-1 rounded">
+        <div class="bg-custom-dark rounded-xl p-8 border border-custom space-y-4">
+            <div class="inline-block bg-orange-500/10 border border-orange-500/30 text-orange-main text-[10px] font-bold px-2.5 py-1 rounded">
                 Counter-Strike 2 Software
             </div>
-            <h1 class="text-2xl font-bold text-white">Приватный софт REQUIEM</h1>
-            <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
-                Инновационный программный комплекс REQUIEM, разработанный с акцентом на скрытость от системы VACnet и сохранение высокого фактора доверия.
+            <h1 class="text-3xl font-black text-white">REQUIEM PRIVATE COMMUNITY</h1>
+            <p class="text-xs text-zinc-400 leading-relaxed max-w-3xl">
+                Приватный комплекс REQUIEM и сообщество разработчиков. Форум, конфиги, система репутации и обмен опытом.
             </p>
             <div class="pt-2 flex gap-3">
-                <button onclick="switchPage('catalog')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-6 py-2.5 rounded transition">
+                <button onclick="switchPage('catalog')" class="bg-orange-main hover:bg-orange-600 text-black font-extrabold text-xs px-6 py-2.5 rounded transition">
                     Купить REQUIEM
                 </button>
-                <button onclick="switchPage('dash')" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-6 py-2.5 rounded transition">
-                    Личный кабинет
+                <button onclick="switchPage('forum')" class="bg-custom-card hover:bg-custom-hover text-white text-xs font-bold px-6 py-2.5 rounded border border-custom transition">
+                    Перейти на Форум
                 </button>
-            </div>
-        </div>
-
-        <!-- РАЗДЕЛ ОТЗЫВОВ -->
-        <div class="space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white uppercase tracking-wide flex items-center gap-2">
-                    <i class="fa-solid fa-star text-amber-400"></i> Отзывы клиентов
-                </h2>
-                <button onclick="openReviewModal()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-4 py-2 rounded transition">
-                    Оставить отзыв
-                </button>
-            </div>
-
-            <div id="reviews-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-custom-dark p-4 rounded-lg border border-custom space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-white font-bold text-xs">Alexander_CS</span>
-                        <div class="text-amber-400 text-xs">
-                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-300">Софт бомба! Играю уже 2 месяца, ваков нет, аим доводит плавно. Рекомендую!</p>
-                    <span class="text-[10px] text-slate-500">Куплено: 30 дней • Вчера</span>
-                </div>
-                <div class="bg-custom-dark p-4 rounded-lg border border-custom space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-white font-bold text-xs">ShadowPlayer</span>
-                        <div class="text-amber-400 text-xs">
-                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-300">Автоматическая выдача ключа через REQ-Client сработала моментально. Быстро активировал в панели!</p>
-                    <span class="text-[10px] text-slate-500">Куплено: 90 дней • 3 дня назад</span>
-                </div>
             </div>
         </div>
     </main>
 
     <!-- СТРАНИЦА: ФОРУМ -->
-    <main id="page-forum" class="max-w-6xl mx-auto w-full p-6 space-y-4 flex-grow hidden">
+    <main id="page-forum" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
         <div class="flex justify-between items-center">
-            <h1 class="text-lg font-bold text-white uppercase tracking-wide">Форум сообщества</h1>
-            <button onclick="openNewTopicModal()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2 rounded transition">
-                Создать тему
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-wide">Форум сообщества</h1>
+                <p class="text-xs text-zinc-500">Обсуждение софта, конфиги, багрепорты и репутация пользователей</p>
+            </div>
+            <button onclick="openNewTopicModal()" class="bg-orange-main hover:bg-orange-600 text-black font-extrabold text-xs px-4 py-2 rounded transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Создать тему
             </button>
         </div>
 
-        <div id="forum-topics" class="bg-custom-dark rounded-lg border border-custom divide-y divide-slate-700/50 text-xs">
-            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-fire text-rose-500 text-base"></i>
+        <!-- ТЕМЫ ФОРУМА -->
+        <div id="forum-topics" class="space-y-3">
+            <!-- Тема 1 -->
+            <div class="bg-custom-dark p-4 rounded-xl border border-custom flex justify-between items-center hover:bg-custom-card transition">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-main font-bold">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
                     <div>
-                        <a href="#" class="text-white font-semibold hover:underline">[Обновление] Патч CS2 — REQ-Client обновлен до v2.4!</a>
-                        <p class="text-[11px] text-slate-400">Автор: Admin • Ответы: 24</p>
+                        <a href="#" class="text-white font-bold text-sm hover:text-orange-main transition">[Обновление] Патч CS2 — REQ-Client v2.4 выкачен!</a>
+                        <div class="flex items-center space-x-2 mt-1 text-[11px]">
+                            <span class="role-admin px-1.5 py-0.2 rounded font-bold text-[9px]">ADMIN</span>
+                            <span class="text-zinc-400 font-semibold">Admin</span>
+                            <span class="text-zinc-600">•</span>
+                            <span class="text-amber-400 font-bold"><i class="fa-solid fa-bolt"></i> 1450 баллов</span>
+                        </div>
                     </div>
                 </div>
-                <span class="text-slate-400">Сегодня, 14:20</span>
+                <div class="flex items-center space-x-6 text-xs">
+                    <div class="text-right">
+                        <span class="text-white font-bold block">24</span>
+                        <span class="text-[10px] text-zinc-500">ответов</span>
+                    </div>
+                    <!-- Репутация темы -->
+                    <div class="flex items-center bg-custom-card border border-custom rounded px-2 py-1 space-x-2">
+                        <button onclick="changeRep('rep-1', -1)" class="text-zinc-500 hover:text-rose-500"><i class="fa-solid fa-chevron-down"></i></button>
+                        <span id="rep-1" class="font-bold text-orange-main text-xs">+42</span>
+                        <button onclick="changeRep('rep-1', 1)" class="text-zinc-500 hover:text-emerald-500"><i class="fa-solid fa-chevron-up"></i></button>
+                    </div>
+                </div>
             </div>
-            <div class="p-4 flex justify-between items-center hover:bg-custom-card/50 transition">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-code text-sky-400 text-base"></i>
+
+            <!-- Тема 2 -->
+            <div class="bg-custom-dark p-4 rounded-xl border border-custom flex justify-between items-center hover:bg-custom-card transition">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-bold">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
                     <div>
-                        <a href="#" class="text-white font-semibold hover:underline">Топовый Legit CFG для REQUIEM</a>
-                        <p class="text-[11px] text-slate-400">Автор: Morphezy • Ответы: 12</p>
+                        <a href="#" class="text-white font-bold text-sm hover:text-orange-main transition">Лучший Legit CFG от Morphezy (+HWID Bypass)</a>
+                        <div class="flex items-center space-x-2 mt-1 text-[11px]">
+                            <span class="role-coder px-1.5 py-0.2 rounded font-bold text-[9px]">CODER</span>
+                            <span class="text-zinc-400 font-semibold">Morphezy</span>
+                            <span class="text-zinc-600">•</span>
+                            <span class="text-amber-400 font-bold"><i class="fa-solid fa-bolt"></i> 890 баллов</span>
+                        </div>
                     </div>
                 </div>
-                <span class="text-slate-400">Вчера, 19:45</span>
+                <div class="flex items-center space-x-6 text-xs">
+                    <div class="text-right">
+                        <span class="text-white font-bold block">12</span>
+                        <span class="text-[10px] text-zinc-500">ответов</span>
+                    </div>
+                    <div class="flex items-center bg-custom-card border border-custom rounded px-2 py-1 space-x-2">
+                        <button onclick="changeRep('rep-2', -1)" class="text-zinc-500 hover:text-rose-500"><i class="fa-solid fa-chevron-down"></i></button>
+                        <span id="rep-2" class="font-bold text-orange-main text-xs">+18</span>
+                        <button onclick="changeRep('rep-2', 1)" class="text-zinc-500 hover:text-emerald-500"><i class="fa-solid fa-chevron-up"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <!-- СТРАНИЦА: КАТАЛОГ -->
     <main id="page-catalog" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
-        <h1 class="text-lg font-bold text-white uppercase tracking-wide">Список софта</h1>
+        <h1 class="text-xl font-bold text-white uppercase tracking-wide">Приватный софт</h1>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            <div onclick="switchPage('buy-item')" class="bg-custom-dark rounded border border-custom overflow-hidden cursor-pointer hover:border-slate-500 transition group flex flex-col justify-between">
-                <div class="relative h-52 bg-slate-900 flex items-center justify-center overflow-hidden">
+            <div onclick="switchPage('buy-item')" class="bg-custom-dark rounded-xl border border-custom overflow-hidden cursor-pointer hover:border-orange-500 transition group flex flex-col justify-between">
+                <div class="relative h-52 bg-zinc-950 flex items-center justify-center overflow-hidden">
                     <div class="text-center z-20">
-                        <h3 class="text-white font-black text-2xl tracking-tighter uppercase italic">REQUIEM</h3>
+                        <h3 class="text-white font-black text-3xl tracking-tighter uppercase italic">REQUIEM</h3>
                     </div>
-                    <span class="absolute bottom-2 left-2 bg-black/90 text-emerald-400 text-[11px] font-semibold px-2 py-0.5 rounded">undetected</span>
+                    <span class="absolute bottom-3 left-3 bg-orange-500/20 text-orange-main border border-orange-500/40 text-[10px] font-bold px-2 py-0.5 rounded uppercase">UNDETECTED</span>
                 </div>
-                <div class="bg-custom-card py-3 text-center text-xs font-bold text-slate-200 uppercase tracking-wider">
-                    REQUIEM CS2
+                <div class="bg-custom-card py-3 text-center text-xs font-bold text-zinc-300 uppercase tracking-wider group-hover:text-orange-main transition">
+                    Купить подписку
                 </div>
             </div>
         </div>
@@ -179,116 +177,87 @@
 
     <!-- СТРАНИЦА: ПОКУПКА -->
     <main id="page-buy-item" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
-        <div class="bg-custom-dark rounded-lg p-5 border border-custom space-y-6">
-            <h1 class="text-white font-semibold text-lg uppercase">Покупка подписки REQUIEM</h1>
-
+        <div class="bg-custom-dark rounded-xl p-6 border border-custom space-y-6">
+            <h1 class="text-white font-bold text-lg uppercase">Покупка подписки REQUIEM</h1>
             <div class="bg-custom-card p-6 rounded-lg border border-custom space-y-6">
-                <h2 class="text-xs uppercase font-bold text-sky-400">Выберите длительность подписки</h2>
-                
+                <h2 class="text-xs uppercase font-bold text-orange-main">Выберите длительность подписки</h2>
                 <div class="space-y-4">
                     <input type="range" id="daysSlider" min="0" max="3" step="1" value="1" oninput="updatePrice()">
-                    <div class="flex justify-between text-xs font-semibold text-slate-400">
+                    <div class="flex justify-between text-xs font-semibold text-zinc-500">
                         <span>14 дней</span>
                         <span>30 дней</span>
                         <span>90 дней</span>
                         <span>180 дней</span>
                     </div>
                 </div>
-
                 <div class="flex justify-end items-center space-x-6 pt-2">
                     <div class="text-right">
-                        <span class="text-xs text-slate-400 block">Сумма</span>
-                        <span id="priceDisplay" class="text-2xl font-bold text-white">349.00 RUB</span>
+                        <span class="text-xs text-zinc-500 block">Сумма к оплате</span>
+                        <span id="priceDisplay" class="text-2xl font-black text-white">349.00 RUB</span>
                     </div>
-                    <button onclick="generateAndBuyKey()" class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded font-medium text-sm flex items-center gap-2 transition">
-                        <i class="fa-solid fa-cart-shopping"></i> Оплатить и получить ключ
+                    <button onclick="generateAndBuyKey()" class="bg-orange-main hover:bg-orange-600 text-black font-extrabold px-6 py-2.5 rounded text-xs transition">
+                        Оплатить и получить ключ
                     </button>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- СТРАНИЦА: ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ -->
+    <!-- СТРАНИЦА: ПАНЕЛЬ -->
     <main id="page-dash" class="max-w-6xl mx-auto w-full p-6 space-y-6 flex-grow hidden">
         <div class="flex justify-between items-center">
             <h1 class="text-xl font-bold text-white uppercase tracking-wide">Панель управления</h1>
-            <div class="flex space-x-3 text-xs">
-                <button onclick="openKeyModal()" class="bg-sky-600 hover:bg-sky-500 text-white font-medium px-4 py-2 rounded flex items-center gap-2 transition">
-                    <i class="fa-solid fa-key"></i> Активировать ключ
-                </button>
-            </div>
+            <button onclick="openKeyModal()" class="bg-custom-card border border-custom hover:border-orange-500 text-white font-bold px-4 py-2 rounded text-xs transition flex items-center gap-2">
+                <i class="fa-solid fa-key text-orange-main"></i> Активировать ключ
+            </button>
         </div>
 
-        <div class="bg-custom-dark border border-custom rounded-lg p-6 space-y-4">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-white font-bold text-base">REQUIEM</h3>
-                    <p class="text-xs text-slate-400">Статус подписки: <span id="dash-sub-days" class="text-emerald-400 font-bold">20 дней</span></p>
-                </div>
-                <button onclick="showToast('Загрузка REQ-Client.exe...', 'success')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs px-4 py-2 rounded font-bold">
-                    Скачать REQ-Client
-                </button>
+        <div class="bg-custom-dark border border-custom rounded-xl p-6 flex justify-between items-center">
+            <div>
+                <h3 class="text-white font-bold text-base">REQUIEM CS2</h3>
+                <p class="text-xs text-zinc-400">Статус подписки: <span id="dash-sub-days" class="text-orange-main font-bold">20 дней</span></p>
             </div>
+            <button onclick="showToast('Загрузка REQ-Client.exe...', 'success')" class="bg-orange-main hover:bg-orange-600 text-black text-xs font-extrabold px-5 py-2.5 rounded transition">
+                Скачать REQ-Client
+            </button>
         </div>
     </main>
 
     <!-- МОДАЛКА: СГЕНЕРИРОВАННЫЙ КЛЮЧ -->
-    <div id="modal-key-generated" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-4 text-center">
-            <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-xl">
+    <div id="modal-key-generated" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-xl space-y-4 text-center">
+            <div class="w-12 h-12 rounded-full bg-orange-500/20 text-orange-main flex items-center justify-center mx-auto text-xl">
                 <i class="fa-solid fa-check"></i>
             </div>
-            <h3 class="text-lg font-bold text-white">Оплата прошла успешно!</h3>
-            <p class="text-xs text-slate-300">Ваш ключ для активации в REQ-Client или на сайте:</p>
-            
-            <div class="bg-custom-card p-3 rounded border border-custom font-mono text-lg text-sky-400 font-bold select-all" id="generated-key-val">
+            <h3 class="text-lg font-bold text-white">Успешная оплата!</h3>
+            <p class="text-xs text-zinc-400">Ключ подписки для сайта или REQ-Client:</p>
+            <div class="bg-custom-card p-3 rounded border border-custom font-mono text-lg text-orange-main font-bold select-all" id="generated-key-val">
                 REQ-XXXX-XXXX-XXXX
             </div>
-
             <div class="flex gap-2">
-                <button onclick="copyKey()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded text-xs">
-                    Скопировать
-                </button>
-                <button onclick="activateGeneratedKeyDirectly()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded text-xs">
-                    Активировать
-                </button>
+                <button onclick="copyKey()" class="w-full bg-custom-card hover:bg-custom-hover text-white font-bold py-2 rounded text-xs border border-custom">Скопировать</button>
+                <button onclick="activateGeneratedKeyDirectly()" class="w-full bg-orange-main hover:bg-orange-600 text-black font-extrabold py-2 rounded text-xs">Активировать</button>
             </div>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА: СОЗДАТЬ ТЕМУ НА ФОРУМЕ -->
-    <div id="modal-topic" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-4 relative">
-            <button onclick="closeModal('modal-topic')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-lg font-bold text-white">Новая тема на форуме</h3>
-            <input type="text" id="topic-title" placeholder="Заголовок темы" class="w-full bg-custom-card border border-custom rounded p-3 text-xs text-white">
-            <button onclick="submitTopic()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded text-xs">
-                Опубликовать
-            </button>
         </div>
     </div>
 
     <!-- МОДАЛКА: АКТИВАЦИЯ КЛЮЧА -->
-    <div id="modal-key" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-4 relative">
-            <button onclick="closeModal('modal-key')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-lg font-bold text-white">Активация ключа REQUIEM</h3>
+    <div id="modal-key" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-xl space-y-4 relative">
+            <button onclick="closeModal('modal-key')" class="absolute top-4 right-4 text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-white">Активация ключа</h3>
             <input type="text" id="key-input" placeholder="REQ-XXXX-XXXX-XXXX" class="w-full bg-custom-card border border-custom rounded p-3 text-xs text-white uppercase text-center font-mono">
-            <button onclick="submitKey()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded text-xs">
-                Активировать
-            </button>
+            <button onclick="submitKey()" class="w-full bg-orange-main hover:bg-orange-600 text-black font-extrabold py-2.5 rounded text-xs">Активировать</button>
         </div>
     </div>
 
-    <!-- МОДАЛКА: ОСТАВИТЬ ОТЗЫВ -->
-    <div id="modal-review" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-lg space-y-4 relative">
-            <button onclick="closeModal('modal-review')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-lg font-bold text-white">Оставить отзыв о REQUIEM</h3>
-            <textarea id="review-text" class="w-full bg-custom-card border border-custom rounded p-3 text-xs text-white h-24" placeholder="Напишите ваш отзыв..."></textarea>
-            <button onclick="submitReview()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded text-xs">
-                Опубликовать
-            </button>
+    <!-- МОДАЛКА: СОЗДАТЬ ТЕМУ НА ФОРУМЕ -->
+    <div id="modal-topic" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-custom-dark border border-custom max-w-md w-full p-6 rounded-xl space-y-4 relative">
+            <button onclick="closeModal('modal-topic')" class="absolute top-4 right-4 text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-white">Создать новую тему</h3>
+            <input type="text" id="topic-title" placeholder="Заголовок темы" class="w-full bg-custom-card border border-custom rounded p-3 text-xs text-white">
+            <button onclick="submitTopic()" class="w-full bg-orange-main hover:bg-orange-600 text-black font-extrabold py-2.5 rounded text-xs">Опубликовать (+10 баллов)</button>
         </div>
     </div>
 
@@ -322,6 +291,14 @@
             if (activeEl) activeEl.classList.add('active');
         }
 
+        function changeRep(id, delta) {
+            const el = document.getElementById(id);
+            let val = parseInt(el.innerText.replace('+', ''));
+            val += delta;
+            el.innerText = (val >= 0 ? '+' : '') + val;
+            showToast('Репутация изменена!', 'success');
+        }
+
         function generateAndBuyKey() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let key = 'REQ-';
@@ -338,7 +315,7 @@
 
         function copyKey() {
             navigator.clipboard.writeText(currentGeneratedKey);
-            showToast('Ключ скопирован в буфер обмена!', 'success');
+            showToast('Ключ скопирован!', 'success');
         }
 
         function activateGeneratedKeyDirectly() {
@@ -360,9 +337,9 @@
                 updateSubDisplay();
                 closeModal('modal-key');
                 document.getElementById('key-input').value = '';
-                showToast(`Ключ активирован! Подписка продлена на +${addedDays} дн.`, 'success');
+                showToast(`Ключ активирован! +${addedDays} дней.`, 'success');
             } else {
-                showToast('Недействительный или уже активированный ключ!', 'error');
+                showToast('Недействительный ключ!', 'error');
             }
         }
 
@@ -372,7 +349,6 @@
         }
 
         function openKeyModal() { document.getElementById('modal-key').classList.remove('hidden'); }
-        function openReviewModal() { document.getElementById('modal-review').classList.remove('hidden'); }
         function openNewTopicModal() { document.getElementById('modal-topic').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -382,52 +358,48 @@
 
             const forum = document.getElementById('forum-topics');
             const item = document.createElement('div');
-            item.className = 'p-4 flex justify-between items-center hover:bg-custom-card/50 transition';
+            item.className = 'bg-custom-dark p-4 rounded-xl border border-custom flex justify-between items-center hover:bg-custom-card transition';
             item.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-comments text-sky-400 text-base"></i>
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-main font-bold">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
                     <div>
-                        <a href="#" class="text-white font-semibold hover:underline">${title}</a>
-                        <p class="text-[11px] text-slate-400">Автор: Morphezy • Ответы: 0</p>
+                        <a href="#" class="text-white font-bold text-sm hover:text-orange-main transition">${title}</a>
+                        <div class="flex items-center space-x-2 mt-1 text-[11px]">
+                            <span class="role-coder px-1.5 py-0.2 rounded font-bold text-[9px]">CODER</span>
+                            <span class="text-zinc-400 font-semibold">Morphezy</span>
+                            <span class="text-zinc-600">•</span>
+                            <span class="text-amber-400 font-bold"><i class="fa-solid fa-bolt"></i> 900 баллов</span>
+                        </div>
                     </div>
                 </div>
-                <span class="text-slate-400">Только что</span>
+                <div class="flex items-center space-x-6 text-xs">
+                    <div class="text-right">
+                        <span class="text-white font-bold block">0</span>
+                        <span class="text-[10px] text-zinc-500">ответов</span>
+                    </div>
+                    <div class="flex items-center bg-custom-card border border-custom rounded px-2 py-1 space-x-2">
+                        <button onclick="changeRep('rep-new', -1)" class="text-zinc-500 hover:text-rose-500"><i class="fa-solid fa-chevron-down"></i></button>
+                        <span id="rep-new" class="font-bold text-orange-main text-xs">+0</span>
+                        <button onclick="changeRep('rep-new', 1)" class="text-zinc-500 hover:text-emerald-500"><i class="fa-solid fa-chevron-up"></i></button>
+                    </div>
+                </div>
             `;
             forum.prepend(item);
             closeModal('modal-topic');
             document.getElementById('topic-title').value = '';
-            showToast('Тема успешно создана!', 'success');
-        }
-
-        function submitReview() {
-            const txt = document.getElementById('review-text').value;
-            if(!txt) return showToast('Введите текст отзыва', 'error');
-
-            const list = document.getElementById('reviews-list');
-            const item = document.createElement('div');
-            item.className = 'bg-custom-dark p-4 rounded-lg border border-custom space-y-2';
-            item.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-white font-bold text-xs">Morphezy</span>
-                    <div class="text-amber-400 text-xs"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                </div>
-                <p class="text-xs text-slate-300">${txt}</p>
-                <span class="text-[10px] text-slate-500">Только что</span>
-            `;
-            list.prepend(item);
-            closeModal('modal-review');
-            document.getElementById('review-text').value = '';
-            showToast('Отзыв опубликован!', 'success');
+            showToast('Тема создана! Начислено +10 баллов', 'success');
         }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            let bg = 'bg-custom-card border-sky-500 text-sky-300';
-            if (type === 'success') bg = 'bg-custom-card border-emerald-500 text-emerald-300';
-            if (type === 'error') bg = 'bg-custom-card border-rose-500 text-rose-300';
+            let bg = 'bg-custom-card border-orange-500 text-orange-400';
+            if (type === 'success') bg = 'bg-custom-card border-emerald-500 text-emerald-400';
+            if (type === 'error') bg = 'bg-custom-card border-rose-500 text-rose-400';
 
-            toast.className = `p-3 rounded border text-xs shadow-xl flex items-center gap-2 ${bg} toast-animate pointer-events-auto`;
+            toast.className = `p-3 rounded-lg border text-xs shadow-xl flex items-center gap-2 ${bg} toast-animate pointer-events-auto`;
             toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
