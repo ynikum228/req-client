@@ -25,20 +25,11 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // Инициализация подключения к Supabase
     const SUPABASE_URL = 'https://rxkpggtayschnhgyuco.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4a3BnZ3RheXNoY25uaGd5dWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MDAzODIsImV4cCI6MjEwMzI3NjM4Mn0.oHoHI5TxXs0ftx1ZVuuhCQM99Q6D964nVCqvoNXVSk8';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const INITIAL_USER = {
-      uid: 1,
-      username: 'morphezy',
-      role: 'owner',
-      avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
-      subscription: 'Lifetime (Unlimited)',
-    };
-
-    function Header({ activeTab, setActiveTab, currentUser }) {
+    function Header({ activeTab, setActiveTab, user, onLogout, onOpenAuth }) {
       return (
         <header className="bg-[#12131a]/90 backdrop-blur-md border-b border-gray-800/80 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -60,36 +51,265 @@
                   <i data-lucide="shopping-cart" className="w-3.5 h-3.5"></i> Купить
                 </button>
 
-                <button 
-                  onClick={() => setActiveTab('keygen')} 
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'keygen' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-400 hover:bg-purple-950/30'}`}
-                >
-                  <i data-lucide="key" className="w-3.5 h-3.5"></i> Ключи
-                </button>
+                {user && (
+                  <button 
+                    onClick={() => setActiveTab('activate')} 
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'activate' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-400 hover:bg-emerald-950/30'}`}
+                  >
+                    <i data-lucide="key-round" className="w-3.5 h-3.5"></i> Активация
+                  </button>
+                )}
 
-                <button 
-                  onClick={() => setActiveTab('admin')} 
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'admin' ? 'bg-red-600 text-white shadow-md' : 'text-red-400 hover:bg-red-950/30'}`}
-                >
-                  <i data-lucide="shield" className="w-3.5 h-3.5"></i> Панель
-                </button>
+                {user && (user.role === 'owner' || user.role === 'admin') && (
+                  <>
+                    <button 
+                      onClick={() => setActiveTab('keygen')} 
+                      className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'keygen' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-400 hover:bg-purple-950/30'}`}
+                    >
+                      <i data-lucide="key" className="w-3.5 h-3.5"></i> Ключи
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveTab('admin')} 
+                      className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${activeTab === 'admin' ? 'bg-red-600 text-white shadow-md' : 'text-red-400 hover:bg-red-950/30'}`}
+                    >
+                      <i data-lucide="shield" className="w-3.5 h-3.5"></i> Панель
+                    </button>
+                  </>
+                )}
               </nav>
             </div>
 
-            <button 
-              onClick={() => setActiveTab('profile')}
-              className="flex items-center gap-2.5 bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800 hover:border-gray-700 transition"
-            >
-              <img src={currentUser.avatar} alt="Avatar" className="w-6 h-6 rounded-full object-cover border border-amber-500" />
-              <div className="text-left">
-                <div className="text-xs font-bold text-white leading-none flex items-center gap-1">
-                  {currentUser.username} <i data-lucide="crown" className="w-2.5 h-2.5 text-amber-400"></i>
-                </div>
-                <div className="text-[9px] text-amber-400 font-mono font-bold">UID #{currentUser.uid}</div>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveTab('profile')}
+                  className="flex items-center gap-2.5 bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800 hover:border-gray-700 transition"
+                >
+                  <div className="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold uppercase">
+                    {user.username ? user.username[0] : 'U'}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-bold text-white leading-none flex items-center gap-1">
+                      {user.username} {user.role === 'owner' && <i data-lucide="crown" className="w-2.5 h-2.5 text-amber-400"></i>}
+                    </div>
+                    <div className="text-[9px] text-orange-400 font-mono font-bold uppercase">{user.role || 'USER'}</div>
+                  </div>
+                </button>
+                <button onClick={onLogout} className="p-2 text-gray-500 hover:text-red-400 transition" title="Выйти">
+                  <i data-lucide="log-out" className="w-4 h-4"></i>
+                </button>
               </div>
-            </button>
+            ) : (
+              <button 
+                onClick={onOpenAuth}
+                className="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-orange-600/20 flex items-center gap-2"
+              >
+                <i data-lucide="user" className="w-3.5 h-3.5"></i> Войти / Регистрация
+              </button>
+            )}
           </div>
         </header>
+      );
+    }
+
+    function AuthModal({ isOpen, onClose, onLoginSuccess }) {
+      const [isRegister, setIsRegister] = useState(false);
+      const [username, setUsername] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      if (!isOpen) return null;
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        const fakeEmail = `${username.toLowerCase().trim()}@requiem.local`;
+
+        if (isRegister) {
+          const { data: authData, error: authErr } = await supabaseClient.auth.signUp({
+            email: fakeEmail,
+            password: password,
+          });
+
+          if (authErr) {
+            setError(authErr.message);
+            setLoading(false);
+            return;
+          }
+
+          if (authData.user) {
+            await supabaseClient.from('profiles').insert([{
+              id: authData.user.id,
+              username: username.trim(),
+              role: username.toLowerCase() === 'morphezy' ? 'owner' : 'user'
+            }]);
+            
+            onLoginSuccess({ id: authData.user.id, username, role: username.toLowerCase() === 'morphezy' ? 'owner' : 'user' });
+            onClose();
+          }
+        } else {
+          const { data: authData, error: authErr } = await supabaseClient.auth.signInWithPassword({
+            email: fakeEmail,
+            password: password,
+          });
+
+          if (authErr) {
+            setError('Неверный логин или пароль');
+            setLoading(false);
+            return;
+          }
+
+          const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+
+          onLoginSuccess(profile || { id: authData.user.id, username, role: 'user' });
+          onClose();
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#12131a] border border-gray-800 w-full max-w-md p-6 rounded-3xl space-y-6 relative">
+            <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">
+              <i data-lucide="x" className="w-5 h-5"></i>
+            </button>
+
+            <div className="text-center space-y-1">
+              <h2 className="text-xl font-black text-white">{isRegister ? 'РЕГИСТРАЦИЯ' : 'АВТОРИЗАЦИЯ'}</h2>
+              <p className="text-xs text-gray-400">Войдите в аккаунт REQUIEM.FUN</p>
+            </div>
+
+            {error && <div className="p-3 bg-red-950/50 border border-red-800 text-red-300 text-xs rounded-xl">{error}</div>}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Логин</label>
+                <input 
+                  type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-[#0b0b0e] border border-gray-800 text-xs text-white rounded-xl p-3 outline-none focus:border-orange-500"
+                  placeholder="Введите логин"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Пароль</label>
+                <input 
+                  type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#0b0b0e] border border-gray-800 text-xs text-white rounded-xl p-3 outline-none focus:border-orange-500"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <button 
+                type="submit" disabled={loading}
+                className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl text-xs transition disabled:opacity-50"
+              >
+                {loading ? 'Загрузка...' : isRegister ? 'Создать аккаунт' : 'Войти'}
+              </button>
+            </form>
+
+            <div className="text-center pt-2 border-t border-gray-800/80">
+              <button onClick={() => setIsRegister(!isRegister)} className="text-xs text-gray-400 hover:text-orange-400 transition">
+                {isRegister ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ActivateKeyTab({ user, onUpdateUser }) {
+      const [keyInput, setKeyInput] = useState('');
+      const [status, setStatus] = useState({ type: '', msg: '' });
+      const [loading, setLoading] = useState(false);
+
+      const handleActivate = async (e) => {
+        e.preventDefault();
+        setStatus({ type: '', msg: '' });
+        setLoading(true);
+
+        const cleanKey = keyInput.trim();
+
+        const { data: keyData, error: keyErr } = await supabaseClient
+          .from('license_keys')
+          .select('*')
+          .eq('key_code', cleanKey)
+          .single();
+
+        if (keyErr || !keyData) {
+          setStatus({ type: 'error', msg: 'Ключ не найден или введен неверно!' });
+          setLoading(false);
+          return;
+        }
+
+        if (keyData.is_used) {
+          setStatus({ type: 'error', msg: 'Этот ключ уже был активирован!' });
+          setLoading(false);
+          return;
+        }
+
+        let subUntil = new Date();
+        if (keyData.duration_days === -1) {
+          subUntil.setFullYear(subUntil.getFullYear() + 100);
+        } else {
+          subUntil.setDate(subUntil.getDate() + keyData.duration_days);
+        }
+
+        await supabaseClient
+          .from('license_keys')
+          .update({ is_used: true, used_by: user.id })
+          .eq('id', keyData.id);
+
+        await supabaseClient
+          .from('profiles')
+          .update({ subscription_until: subUntil.toISOString() })
+          .eq('id', user.id);
+
+        setStatus({ type: 'success', msg: 'Ключ успешно активирован! Подписка продлена.' });
+        setKeyInput('');
+        onUpdateUser();
+        setLoading(false);
+      };
+
+      return (
+        <div className="max-w-xl mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-black text-white">АКТИВАЦИЯ ЛИЦЕНЗИОННОГО КЛЮЧА</h1>
+            <p className="text-xs text-gray-400">Вставьте купленный или полученный ключ для продления подписки</p>
+          </div>
+
+          <form onSubmit={handleActivate} className="bg-[#12131a] border border-gray-800 p-6 rounded-2xl space-y-4">
+            {status.msg && (
+              <div className={`p-3 rounded-xl text-xs ${status.type === 'error' ? 'bg-red-950/50 border border-red-800 text-red-300' : 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'}`}>
+                {status.msg}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400">Ваш ключ доступа</label>
+              <input 
+                type="text" required value={keyInput} onChange={(e) => setKeyInput(e.target.value)}
+                placeholder="REQ-XXXX-XXXX-XXXX"
+                className="w-full bg-[#0b0b0e] border border-gray-800 text-xs font-mono text-white rounded-xl p-3 outline-none focus:border-emerald-500 uppercase tracking-widest text-center"
+              />
+            </div>
+
+            <button 
+              type="submit" disabled={loading}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+            >
+              {loading ? 'Проверка...' : 'Активировать ключ'}
+            </button>
+          </form>
+        </div>
       );
     }
 
@@ -147,26 +367,23 @@
       );
     }
 
-    function KeygenTab({ currentUser }) {
+    function KeygenTab({ user }) {
       const [generatedKeys, setGeneratedKeys] = useState([]);
       const [keyDuration, setKeyDuration] = useState('lifetime');
       const [keyAmount, setKeyAmount] = useState(1);
       const [loading, setLoading] = useState(false);
 
-      // Загрузка ключей из Supabase при монтировании компонента
       useEffect(() => {
         fetchKeys();
       }, []);
 
       const fetchKeys = async () => {
-        const { data, error } = await supabaseClient
+        const { data } = await supabaseClient
           .from('license_keys')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          setGeneratedKeys(data);
-        }
+        if (data) setGeneratedKeys(data);
       };
 
       const generateLicenseKey = () => {
@@ -188,16 +405,8 @@
           });
         }
 
-        const { data, error } = await supabaseClient
-          .from('license_keys')
-          .insert(newKeysToInsert)
-          .select();
-
-        if (error) {
-          alert('Ошибка при сохранении в Supabase! Убедитесь, что выполнили SQL скрипт создания таблиц.');
-        } else {
-          fetchKeys();
-        }
+        await supabaseClient.from('license_keys').insert(newKeysToInsert);
+        fetchKeys();
         setLoading(false);
       };
 
@@ -205,7 +414,7 @@
         <div className="space-y-6 max-w-4xl mx-auto">
           <div className="bg-[#12131a] border border-purple-900/40 p-5 rounded-2xl flex items-center justify-between">
             <h1 className="text-base font-bold text-white flex items-center gap-2">
-              <i data-lucide="key" className="text-purple-400 w-4 h-4"></i> Генерация лицензионных ключей (Supabase DB Connected)
+              <i data-lucide="key" className="text-purple-400 w-4 h-4"></i> Генерация лицензионных ключей (Admin Control)
             </h1>
           </div>
 
@@ -233,22 +442,21 @@
               </div>
 
               <button 
-                type="submit" 
-                disabled={loading}
+                type="submit" disabled={loading}
                 className="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 rounded-xl text-xs transition disabled:opacity-50"
               >
-                {loading ? 'Сохранение в БД...' : 'Сгенерировать в БД'}
+                {loading ? 'Создание...' : 'Сгенерировать'}
               </button>
             </form>
 
             <div className="md:col-span-2 bg-[#12131a] border border-gray-800/80 p-5 rounded-2xl space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">История ключей из БД ({generatedKeys.length})</h3>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Все ключи ({generatedKeys.length})</h3>
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {generatedKeys.map(k => (
-                  <div key={k.id || k.key_code} className="p-3 bg-[#0b0b0e] border border-gray-800 rounded-xl flex items-center justify-between text-xs">
-                    <span className="font-mono text-purple-300 font-bold">{k.key_code}</span>
-                    <span className="text-gray-500 font-mono text-[10px]">
-                      {k.duration_days === -1 ? 'Lifetime' : `${k.duration_days} Дней`}
+                  <div key={k.id} className="p-3 bg-[#0b0b0e] border border-gray-800 rounded-xl flex items-center justify-between text-xs">
+                    <span className={`font-mono font-bold ${k.is_used ? 'line-through text-gray-600' : 'text-purple-300'}`}>{k.key_code}</span>
+                    <span className={`font-mono text-[10px] ${k.is_used ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {k.is_used ? 'ИСПОЛЬЗОВАН' : k.duration_days === -1 ? 'Lifetime' : `${k.duration_days} дн.`}
                     </span>
                   </div>
                 ))}
@@ -259,20 +467,23 @@
       );
     }
 
-    function ProfileTab({ currentUser }) {
+    function ProfileTab({ user }) {
       return (
         <div className="space-y-6 max-w-3xl mx-auto">
           <div className="bg-[#12131a] border border-gray-800/80 rounded-2xl p-6 flex items-center gap-6">
-            <img src={currentUser.avatar} alt="Avatar" className="w-20 h-20 rounded-2xl border-2 border-amber-500 object-cover" />
+            <div className="w-16 h-16 rounded-2xl bg-orange-600 flex items-center justify-center text-white text-2xl font-bold uppercase">
+              {user.username ? user.username[0] : 'U'}
+            </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black text-white">{currentUser.username}</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-md border border-amber-600 bg-amber-950/70 text-amber-400 font-bold">
-                  OWNER
+                <h2 className="text-2xl font-black text-white">{user.username}</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-md border border-orange-600 bg-orange-950/70 text-orange-400 font-bold uppercase">
+                  {user.role || 'USER'}
                 </span>
               </div>
-              <div className="text-xs font-mono text-amber-400 font-bold">Уникальный идентификатор: UID #{currentUser.uid}</div>
-              <div className="text-xs text-gray-500">Подписка: {currentUser.subscription}</div>
+              <div className="text-xs font-mono text-gray-400">
+                Подписка: {user.subscription_until ? new Date(user.subscription_until).toLocaleDateString() : 'Нет активной подписки'}
+              </div>
             </div>
           </div>
         </div>
@@ -281,30 +492,59 @@
 
     function App() {
       const [activeTab, setActiveTab] = useState('buy');
-      const [currentUser] = useState(INITIAL_USER);
+      const [user, setUser] = useState(null);
+      const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+      const fetchProfile = async (authUser) => {
+        if (!authUser) return;
+        const { data } = await supabaseClient.from('profiles').select('*').eq('id', authUser.id).single();
+        if (data) setUser(data);
+      };
+
+      useEffect(() => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) fetchProfile(session.user);
+        });
+      }, []);
 
       useEffect(() => {
         if (window.lucide) window.lucide.createIcons();
-      }, [activeTab]);
+      }, [activeTab, user, isAuthOpen]);
+
+      const handleLogout = async () => {
+        await supabaseClient.auth.signOut();
+        setUser(null);
+        setActiveTab('buy');
+      };
 
       return (
         <div className="min-h-screen bg-[#0b0b0e] text-gray-300 font-sans">
-          <Header activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} />
+          <Header 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            user={user} 
+            onLogout={handleLogout}
+            onOpenAuth={() => setIsAuthOpen(true)}
+          />
           
           <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
             {activeTab === 'buy' && <BuyTab />}
-            {activeTab === 'keygen' && <KeygenTab currentUser={currentUser} />}
-            {activeTab === 'profile' && <ProfileTab currentUser={currentUser} />}
-            {activeTab === 'admin' && (
+            {activeTab === 'activate' && user && <ActivateKeyTab user={user} onUpdateUser={() => fetchProfile(user)} />}
+            {activeTab === 'keygen' && user && (user.role === 'owner' || user.role === 'admin') && <KeygenTab user={user} />}
+            {activeTab === 'profile' && user && <ProfileTab user={user} />}
+            {activeTab === 'admin' && user && (user.role === 'owner' || user.role === 'admin') && (
               <div className="max-w-3xl mx-auto bg-[#12131a] border border-amber-500/30 p-6 rounded-2xl text-xs flex justify-between items-center">
-                <div>
-                  <span className="font-mono text-amber-400 font-bold mr-2">UID #{currentUser.uid}</span>
-                  <span className="text-white font-bold">{currentUser.username}</span>
-                </div>
-                <span className="text-amber-400 font-bold">Full Owner Root Access</span>
+                <span className="text-white font-bold">{user.username} ({user.role})</span>
+                <span className="text-amber-400 font-bold">Full Root Access</span>
               </div>
             )}
           </main>
+
+          <AuthModal 
+            isOpen={isAuthOpen} 
+            onClose={() => setIsAuthOpen(false)} 
+            onLoginSuccess={(userData) => setUser(userData)} 
+          />
         </div>
       );
     }
